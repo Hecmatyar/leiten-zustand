@@ -1,4 +1,4 @@
-# Zustand Fetching Helpers
+# Zustand controllers
 
 > Helps to avoid using other state managers to execute requests and allows you to work efficiently with zustand.
 
@@ -34,7 +34,7 @@ const useController = leiten[Controller](useStore, "dot.nested.path", [options])
 
 ### Small Example
 
-Let's load some data and then change it.
+Let's create some fake example: load some data and then change it.
 
 #### Pure zustand
 
@@ -63,15 +63,18 @@ const useStore = create<IStore>((set, get) => ({
 }))
 ```
 
-#### Leiten controllers
+#### With leiten controllers
 
 ```tsx
 const useStore = create<IStore>(() => ({
   data: { user: null, cards: [] },
 }));
 
+// loadData & loadingData
 const useRequest = leitenRequest(useStore, "data", (id: string) => getData(id));
+// updateUser
 const userController = leitenRecord(useStore, "data.user");
+// removeCard
 const cardsController = leitenList(useStore, "data.cards", { compare: (a, b) => a.id == b.id });
 ```
 
