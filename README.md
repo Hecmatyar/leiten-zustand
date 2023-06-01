@@ -84,26 +84,26 @@ create a cleaner and more streamlined store structure, making it easier to manag
 data.
 
 All actions and states for your **zustand**
-store. [Examples](https://github.com/Hecmatyar/zustand-fetching/tree/main/src/examples/controllers)
+store. [Examples](https://github.com/Hecmatyar/leiten-zustand/tree/main/src/examples/controllers)
 
-- [leitenRequest](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/controllers/1_Controller_Request.tsx)
+- [leitenRequest](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/1_Controller_Request.tsx)
   Helps handle requests (any async function) and catch errors. Returns a **hook** with request parameters and provides
   methods such as _action_, _clear_, _abort_, and _set_.
-- [leitenGroupRequest](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/controllers/6_Controller_GroupRequest.tsx)
+- [leitenGroupRequest](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/6_Controller_GroupRequest.tsx)
   Handles multiple similar requests dynamically. Returns a **hook** with two overloads and provides methods such
   as _call_ and _clear_. Can work with arrays as well as with the normalized list.
-- [leitenRecord](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/controllers/2_Controller_Record.tsx)
+- [leitenRecord](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/2_Controller_Record.tsx)
   Works with objects and provides methods such as _set_, _patch_ and _clear_.
-- [leitenPrimitive](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/controllers/3_Controller_Primitive.tsx)
+- [leitenPrimitive](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/3_Controller_Primitive.tsx)
   Works with data as if it were a primitive value, but it can be an object, function, or primitives. Provides methods
   such as _set_ and _clear_.
-- [leitenList](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/controllers/4_Controller_List.tsx)
+- [leitenList](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/4_Controller_List.tsx)
   Works with arrays and provides methods such as _set_, _clear_, _add_, _update_, _remove_, _toggle_, and _filter_. If
   the array item
   is an object, a **compare** function needs to be set in the controller's options (third parameter).
-- [leitenNormalizedList](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/controllers/4_Controller_List.tsx)
+- [leitenNormalizedList](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/4_Controller_List.tsx)
   Same as leitenList but works with normalized state.
-- [leitenModal](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/controllers/5_Controller_Modal.tsx)
+- [leitenModal](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/5_Controller_Modal.tsx)
   Helps work with modals and provides a built-in modal manager for cascading modals. Returns hooks
   with [openState, hiddenState] and provides methods such as _open_, _close_ and _action_.
 
@@ -192,7 +192,7 @@ const User = () => {
 ```
 
 leitenMap also can be helpful,
-[example](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/controllers/6_Controller_GroupRequest.tsx)
+[example](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/6_Controller_GroupRequest.tsx)
 
 ### Group Request
 
@@ -243,6 +243,6 @@ const requests = useGroupController((state) => state); // Record with all reques
 ### Store
 
 The library provides wrappers
-for [ContextStore](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/store/ContextStore.tsx)
-and [ResettableStore](https://github.com/Hecmatyar/zustand-fetching/blob/main/src/examples/store/ResettableStore.tsx).
+for [ContextStore](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/store/ContextStore.tsx)
+and [ResettableStore](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/store/ResettableStore.tsx).
 These wrappers can be used to enhance your Zustand store with additional features.
