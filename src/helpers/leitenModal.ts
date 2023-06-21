@@ -39,10 +39,15 @@ export const leitenModal = <
   }
 ): ILeitenModal<DotNestedValue<Store, P>> => {
   type Data = DotNestedValue<Store, P>;
-  const initialData = get(store.getState(), path, "_empty") as Data | "_empty";
-  if (initialData === "_empty") {
-    throw new Error("[leitenModal] The defined path does not exist");
-  }
+  let initialData: Data;
+
+  setTimeout(() => {
+    initialData = get(store.getState(), path, "_empty") as Data;
+    if (initialData === "_empty") {
+      throw new Error("[leitenModal] The defined path does not exist");
+    }
+  }, 0);
+
   const key = nanoid(10);
 
   const setContent = (value: Data) => {

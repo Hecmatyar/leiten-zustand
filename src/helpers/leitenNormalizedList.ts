@@ -5,6 +5,8 @@ import { StoreApi } from "zustand/esm";
 import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
 import { ILeitenList } from "./leitenList";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 type NormalizedType<ITEM> = Record<string, ITEM>;
 type ValueOf<T> = T extends Record<infer _K, infer V> ? V : never;
 
@@ -33,14 +35,23 @@ export const leitenNormalizedList = <
   removeByKey: (value: string | string[]) => void;
 } => {
   type ITEM = ValueOf<DotNestedValue<Store, P>>;
-  const initialValue = get(store.getState(), path, "_empty") as
-    | NormalizedType<ITEM>
-    | "_empty";
-  if (initialValue === "_empty" || typeof initialValue !== "object") {
-    throw new Error(
-      "[leitenNormalizedList] The defined path does not match the required structure"
-    );
-  }
+  let initialValue: NormalizedType<ITEM>;
+
+  setTimeout(() => {
+    initialValue = get(
+      store.getState(),
+      path,
+      "_empty"
+    ) as NormalizedType<ITEM>;
+    if (
+      (initialValue as any) === "_empty" ||
+      typeof initialValue !== "object"
+    ) {
+      throw new Error(
+        "[leitenNormalizedList] The defined path does not match the required structure"
+      );
+    }
+  }, 0);
 
   const compare = params?.compare || defaultCompareList;
 

@@ -32,30 +32,32 @@ export const leitenRecord = <
   effects?: ILeitenRecordEffects<DotNestedValue<Store, P>, Store>
 ): ILeitenRecord<DotNestedValue<Store, P>> => {
   type VALUE = DotNestedValue<Store, P>;
-  const initialValue = get(store.getState(), path, "_empty") as
-    | VALUE
-    | "_empty";
-  if (initialValue === "_empty" || typeof initialValue !== "object") {
-    throw new Error(
-      "[leitenRecord] The defined path does not match the required structure"
-    );
-  }
+  let initialValue: VALUE;
+
+  setTimeout(() => {
+    initialValue = get(store.getState(), path, "_empty") as VALUE;
+    if (initialValue === "_empty" || typeof initialValue !== "object") {
+      throw new Error(
+        "[leitenRecord] The defined path does not match the required structure"
+      );
+    }
+  }, 0);
 
   const getState = (): VALUE => {
     const value = get(store.getState(), path, "_empty") as VALUE | "_empty";
     return value !== "_empty" ? value : initialValue;
   };
 
-  const setState = (value: VALUE) => {
+  const setState = (next: VALUE) => {
     const prev = getState();
     const draftState = produce(store.getState(), (draft) => {
-      set(draft, path, value);
+      set(draft, path, next);
     });
     const nextState = effects?.patchEffect
-      ? { ...effects.patchEffect(value), ...draftState }
+      ? { ...effects.patchEffect(next), ...draftState }
       : draftState;
     store.setState(nextState);
-    effects?.sideEffect?.({ prev, next: value });
+    effects?.sideEffect?.({ prev, next });
   };
 
   const clear = () => {

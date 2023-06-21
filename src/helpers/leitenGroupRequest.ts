@@ -94,7 +94,11 @@ export const leitenGroupRequest = <
     string,
     ILeitenRequest<ILeitenGroupRequestParams<Payload>, Result>
   > = {};
-  const isArray = Array.isArray(get(store.getState(), path));
+
+  let isArray: boolean;
+  setTimeout(() => {
+    isArray = Array.isArray(get(store.getState(), path));
+  }, 0);
 
   const getPathToArrayItem = (key: string) => {
     const source = get(store.getState(), path, []);
@@ -110,8 +114,6 @@ export const leitenGroupRequest = <
   };
 
   const add = (key: string) => {
-    // const state = requests[key];
-    // if (!state) {
     let pathWithKey = "" as DotNestedKeys<Store>;
     let payload = payloadCreator;
     if (isArray) {
@@ -137,7 +139,6 @@ export const leitenGroupRequest = <
       store.setState(nextState);
     }
     requests[key] = leitenRequest(store, pathWithKey, payload, options);
-    // }
   };
 
   const call = (
@@ -236,5 +237,4 @@ export const leitenGroupRequest = <
   return Object.assign(hook, { clear, call, requests });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nonTypedReturn = (value: any) => value;

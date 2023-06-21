@@ -80,10 +80,14 @@ export const leitenRequest = <
   options?: ILeitenRequestOptions<Payload, Result>
 ): ILeitenRequest<Payload, Result> => {
   const key = nanoid(12);
-  const initialContent: Result = get(store.getState(), path, null) as Result;
+  let initialContent: Result;
   const initialState = initialLeitenLoading<Payload, Result>(
     options?.initialStatus
   );
+
+  setTimeout(() => {
+    initialContent = get(store.getState(), path, null) as Result;
+  }, 0);
 
   const setState = (state: ILeitenLoading<Payload, Result>) => {
     useLeitenRequests.setState({ [key]: state });
