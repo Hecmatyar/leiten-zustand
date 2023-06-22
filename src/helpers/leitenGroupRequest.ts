@@ -59,7 +59,7 @@ export type ILeitenGroupRequest<Payload, Result> = {
 
 interface ILeitenGroupRequestOption<Payload, Result>
   extends ILeitenRequestOptions<ILeitenGroupRequestParams<Payload>, Result> {
-  initialContent?: Result;
+  initialContent?: Result | ((key: string) => Result);
 }
 
 interface ILeitenGroupRequestArrayOption<Payload, Result>
@@ -75,14 +75,16 @@ export const leitenGroupRequest = <
 >(
   store: StoreApi<Store>,
   path: P extends string
-    ? DotNestedValue<Store, P> extends Record<string, Result> | Array<Result>
+    ? Result extends void
+      ? P
+      : DotNestedValue<Store, P> extends Record<string, Result> | Array<Result>
       ? P
       : never
     : never,
   payloadCreator: (
     params: ILeitenGroupRequestParams<Payload>
   ) => Promise<Result>,
-  options?: DotNestedValue<Store, P> extends Record<string, Result>
+  options?: DotNestedValue<Store, P> extends Record<string, any>
     ? ILeitenGroupRequestOption<Payload, Result>
     : ILeitenGroupRequestArrayOption<Payload, Result>
 ): ILeitenGroupRequest<Payload, Result> => {
@@ -133,10 +135,15 @@ export const leitenGroupRequest = <
       };
     } else {
       pathWithKey = (path + `.${key}`) as DotNestedKeys<Store>;
-      const nextState = produce(store.getState(), (draft) => {
-        set(draft, pathWithKey, options?.initialContent ?? null);
-      });
-      store.setState(nextState);
+      if (options?.initialContent) {
+        const initial = checkInitial(options.initialContent)
+          ? options.initialContent(key)
+          : options.initialContent;
+        const nextState = produce(store.getState(), (draft) => {
+          set(draft, pathWithKey, initial);
+        });
+        store.setState(nextState);
+      }
     }
     requests[key] = leitenRequest(store, pathWithKey, payload, options);
   };
@@ -238,3 +245,7 @@ export const leitenGroupRequest = <
 };
 
 const nonTypedReturn = (value: any) => value;
+
+const checkInitial = <Result>(
+  value: Result | ((key: string) => Result)
+): value is (key: string) => Result => typeof value === "function";
