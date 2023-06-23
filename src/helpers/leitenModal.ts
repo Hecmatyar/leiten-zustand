@@ -88,7 +88,7 @@ export const leitenModal = <
   };
 
   const open = (data?: DotNestedValue<Store, P>, replace?: boolean) => {
-    action({ type: "OPEN", payload: data || initialData, replace });
+    action({ type: "OPEN", payload: data, replace });
   };
 
   const close = () => action({ type: "CLOSE" });
