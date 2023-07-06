@@ -29,6 +29,7 @@ export interface ILeitenRequest<Payload, Result>
   ) => void;
   set: (value: Partial<Result> | void, rewrite?: boolean) => void;
   key: string;
+  getState: () => ILeitenLoading<Payload, Result>;
 }
 
 export interface ILeitenRequestCallback<Payload, Result> {
@@ -214,12 +215,17 @@ export const leitenRequest = <
     });
   }
 
+  const _getState = () => {
+    return useLeitenRequests.getState()[key];
+  };
+
   return Object.assign(useRequest, {
     abort: _abort,
     action,
     clear,
     set: _set,
     key,
+    getState: _getState,
   });
 };
 
