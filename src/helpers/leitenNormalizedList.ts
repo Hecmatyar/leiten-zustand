@@ -35,23 +35,17 @@ export const leitenNormalizedList = <
   removeByKey: (value: string | string[]) => void;
 } => {
   type ITEM = ValueOf<DotNestedValue<Store, P>>;
-  let initialValue: NormalizedType<ITEM>;
 
-  setTimeout(() => {
-    initialValue = get(
-      store.getState(),
-      path,
-      "_empty"
-    ) as NormalizedType<ITEM>;
-    if (
-      (initialValue as any) === "_empty" ||
-      typeof initialValue !== "object"
-    ) {
-      throw new Error(
-        "[leitenNormalizedList] The defined path does not match the required structure"
-      );
-    }
-  }, 0);
+  const initialValue = get(
+    store.getState(),
+    path,
+    "_empty"
+  ) as NormalizedType<ITEM>;
+  if ((initialValue as any) === "_empty" || typeof initialValue !== "object") {
+    throw new Error(
+      "[leitenNormalizedList] The defined path does not match the required structure"
+    );
+  }
 
   const compare = params?.compare || defaultCompareList;
 

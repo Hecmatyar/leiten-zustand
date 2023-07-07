@@ -23,14 +23,11 @@ export const leitenPrimitive = <
   effects?: ILeitenPrimitiveEffects<DotNestedValue<Store, P>, Store>
 ): ILeitenPrimitive<DotNestedValue<Store, P>> => {
   type VALUE = DotNestedValue<Store, P>;
-  let initialValue: VALUE;
 
-  setTimeout(() => {
-    initialValue = get(store.getState(), path, "_empty") as VALUE;
-    if (initialValue === "_empty") {
-      throw new Error("[leitenPrimitive] The defined path does not exist");
-    }
-  }, 0);
+  const initialValue = get(store.getState(), path, "_empty") as VALUE;
+  if (initialValue === "_empty") {
+    throw new Error("[leitenPrimitive] The defined path does not exist");
+  }
 
   const getState = (): VALUE => {
     const value = get(store.getState(), path, "_empty") as VALUE | "_empty";

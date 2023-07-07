@@ -40,15 +40,12 @@ export const leitenList = <
   params?: ILeitenListEffects<ArrayElement<DotNestedValue<Store, P>>, Store>
 ): ILeitenList<ArrayElement<DotNestedValue<Store, P>>> => {
   type ITEM = ArrayElement<DotNestedValue<Store, P>>;
-  let initialValue: ITEM[];
-  setTimeout(() => {
-    initialValue = get(store.getState(), path, "_empty") as ITEM[];
-    if ((initialValue as any) === "_empty") {
-      throw new Error(
-        "[leitenList] The defined path does not match the required structure"
-      );
-    }
-  }, 0);
+  const initialValue = get(store.getState(), path, "_empty") as ITEM[];
+  if ((initialValue as any) === "_empty") {
+    throw new Error(
+      "[leitenList] The defined path does not match the required structure"
+    );
+  }
 
   const compare = params?.compare || defaultCompareList;
 

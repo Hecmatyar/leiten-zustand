@@ -81,14 +81,10 @@ export const leitenRequest = <
   options?: ILeitenRequestOptions<Payload, Result>
 ): ILeitenRequest<Payload, Result> => {
   const key = nanoid(12);
-  let initialContent: Result;
   const initialState = initialLeitenLoading<Payload, Result>(
     options?.initialStatus
   );
-
-  setTimeout(() => {
-    initialContent = get(store.getState(), path, null) as Result;
-  }, 0);
+  const initialContent = get(store.getState(), path, null) as Result;
 
   const setState = (state: ILeitenLoading<Payload, Result>) => {
     useLeitenRequests.setState({ [key]: state });
@@ -203,17 +199,19 @@ export const leitenRequest = <
     );
   };
 
-  const resettable =
-    (store.getState() as any)["_resettableLifeCycle"] !== undefined;
-  if (resettable) {
-    store.subscribe((next, prev) => {
-      if (
-        (next as any)["_resettableLifeCycle"] === false &&
-        (prev as any)["_resettableLifeCycle"] === true
-      )
-        setState(initialState);
-    });
-  }
+  setTimeout(() => {
+    const resettable =
+      (store.getState() as any)["_resettableLifeCycle"] !== undefined;
+    if (resettable) {
+      store.subscribe((next, prev) => {
+        if (
+          (next as any)["_resettableLifeCycle"] === false &&
+          (prev as any)["_resettableLifeCycle"] === true
+        )
+          setState(initialState);
+      });
+    }
+  }, 0);
 
   const _getState = () => {
     return useLeitenRequests.getState()[key];

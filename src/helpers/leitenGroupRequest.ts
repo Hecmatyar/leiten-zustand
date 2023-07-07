@@ -97,10 +97,7 @@ export const leitenGroupRequest = <
     ILeitenRequest<ILeitenGroupRequestParams<Payload>, Result>
   > = {};
 
-  let isArray: boolean;
-  setTimeout(() => {
-    isArray = Array.isArray(get(store.getState(), path));
-  }, 0);
+  const isArray = Array.isArray(get(store.getState(), path));
 
   const getPathToArrayItem = (key: string) => {
     const source = get(store.getState(), path, []);
@@ -233,13 +230,19 @@ export const leitenGroupRequest = <
     }
   }
 
-  const resettable =
-    (store.getState() as any)["_resettableLifeCycle"] !== undefined;
-  if (resettable) {
-    store.subscribe((next) => {
-      if ((next as any)["_resettableLifeCycle"] === false) clear();
-    });
-  }
+  setTimeout(() => {
+    const resettable =
+      (store.getState() as any)["_resettableLifeCycle"] !== undefined;
+    if (resettable) {
+      store.subscribe((next, prev) => {
+        if (
+          (next as any)["_resettableLifeCycle"] === false &&
+          (prev as any)["_resettableLifeCycle"] === true
+        )
+          clear();
+      });
+    }
+  }, 0);
 
   return Object.assign(hook, { clear, call, requests });
 };
