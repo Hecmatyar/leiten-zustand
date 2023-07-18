@@ -108,8 +108,7 @@ store. [Examples](https://github.com/Hecmatyar/leiten-zustand/tree/main/src/exam
   with [openState, hiddenState] and provides methods such as _open_, _close_ and _action_.
 
 > All leitenControllers automatically infer the required types based on the specified path and will throw a **TypeScript
-> error** if the provided path does not match the controller's requirements or established types. Examples:
->- Argument of type '"info.keywords.1"' is not assignable to parameter of type '"info.keywords"'.
+> error** if the provided path does not match the controller's requirements or established types.
 >- Argument of type 'string' is not assignable to parameter of type 'never'.
 
 ⚠️ If you encounter an error when specifying the path to your field in the store, it is likely because you are

@@ -64,7 +64,7 @@ export const leitenRequest = <
   Store extends object,
   P extends DotNestedKeys<Store>,
   Payload,
-  Result
+  Result extends DotNestedValue<Store, P> | null | void
 >(
   store: StoreApi<Store>,
   path: P extends string

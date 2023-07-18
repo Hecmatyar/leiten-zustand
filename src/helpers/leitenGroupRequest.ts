@@ -67,11 +67,23 @@ interface ILeitenGroupRequestArrayOption<Payload, Result>
   getKey: (value: Result) => string;
 }
 
+type AcceptableType<Store extends object> = void | DotNestedValue<
+  Store,
+  DotNestedKeys<Store>
+> | null;
+
 export const leitenGroupRequest = <
   Store extends object,
   P extends DotNestedKeys<Store>,
   Payload,
-  Result
+  Result extends DotNestedValue<Store, P> extends Record<
+    string,
+    AcceptableType<Store>
+  >
+    ? DotNestedValue<Store, P>[string]
+    : DotNestedValue<Store, P> extends Array<AcceptableType<Store>>
+    ? DotNestedValue<Store, P>[number]
+    : DotNestedValue<Store, P>
 >(
   store: StoreApi<Store>,
   path: P extends string
@@ -100,7 +112,8 @@ export const leitenGroupRequest = <
   const isArray = Array.isArray(get(store.getState(), path));
 
   const getPathToArrayItem = (key: string) => {
-    const source = get(store.getState(), path, []);
+    const raw = get(store.getState(), path, []);
+    const source = Array.isArray(raw) ? raw : [];
     const find = source.findIndex(
       (s) =>
         (options as ILeitenGroupRequestArrayOption<Payload, Result>)?.getKey?.(
