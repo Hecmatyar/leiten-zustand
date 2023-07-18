@@ -96,7 +96,10 @@ export const leitenGroupRequest = <
   payloadCreator: (
     params: ILeitenGroupRequestParams<Payload>
   ) => Promise<Result>,
-  options?: DotNestedValue<Store, P> extends Record<string, any>
+  options?: DotNestedValue<Store, P> extends Record<
+    string,
+    AcceptableType<Store>
+  >
     ? ILeitenGroupRequestOption<Payload, Result>
     : ILeitenGroupRequestArrayOption<Payload, Result>
 ): ILeitenGroupRequest<Payload, Result> => {

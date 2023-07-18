@@ -119,6 +119,8 @@ export const leitenRequest = <
         : ({ ...state, ...value } as Result);
       const content = typeof value === "object" ? objectContent : value;
       setContent(content);
+    } else {
+      value !== undefined && value !== null && setContent(value);
     }
   };
 
