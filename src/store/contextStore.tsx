@@ -1,9 +1,15 @@
 import { createContext, ReactNode, useContext, useState } from "react";
-import { create, StateCreator, StoreApi, useStore } from "zustand";
+import {
+  create,
+  StateCreator,
+  StoreApi,
+  UseBoundStore,
+  useStore,
+} from "zustand";
 
 export const leitenContext = <STATE, R>(
   state: StateCreator<STATE>,
-  applyStore?: (store: StoreApi<STATE>) => R
+  applyStore?: <S extends UseBoundStore<StoreApi<STATE>>>(store: S) => R
 ) => {
   const StoreContext = createContext<{
     store: StoreApi<STATE> | null;
@@ -30,7 +36,13 @@ export const leitenContext = <STATE, R>(
 
   const StoreProvider = ({ children }: { children: ReactNode }) => {
     const [store] = useState(createStore);
-    const [withStore] = useState(() => applyStore?.(store) || null);
+    const [boundStore] = useState(
+      () =>
+        Object.assign(useZustandStore, store) as unknown as UseBoundStore<
+          StoreApi<STATE>
+        >
+    );
+    const [withStore] = useState(() => applyStore?.(boundStore) || null);
     return (
       <StoreContext.Provider value={{ store, withStore }}>
         {children}

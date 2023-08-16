@@ -23,3 +23,5 @@ export type DotNestedValue<
 > = Path extends `${infer Head}.${infer Tail}`
   ? DotNestedValue<O[Head], Tail>
   : O[Path];
+
+export type ValueOf<T> = T extends Record<infer _K, infer V> ? V : never;

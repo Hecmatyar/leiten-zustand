@@ -14,6 +14,7 @@ import {
   ILeitenRequest,
   ILeitenRequestOptions,
   leitenRequest,
+  resettableStoreSubscription,
 } from "./leitenRequest";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -23,10 +24,13 @@ export interface ILeitenGroupRequestParams<Params> {
   params: Params;
 }
 
-interface ICallOptions {
+export interface IGroupCallOptions {
   status?: ILoadingStatus;
   requestId?: string;
 }
+
+export type AcceptableGroupRequestType<Store extends object> =
+  void | DotNestedValue<Store, DotNestedKeys<Store>> | null;
 
 type LeitenState<Payload, Result> = ILeitenLoading<
   ILeitenGroupRequestParams<Payload>,
@@ -46,9 +50,9 @@ type UseGroupRequestType<Payload, Result> = <U = LeitenState<Payload, Result>>(
 
 export type ILeitenGroupRequest<Payload, Result> = {
   clear: (key?: string) => void;
-  call: (
+  action: (
     params: ILeitenGroupRequestParams<Payload>[],
-    options?: ICallOptions
+    options?: IGroupCallOptions
   ) => void;
   requests: Record<
     string,
@@ -57,20 +61,15 @@ export type ILeitenGroupRequest<Payload, Result> = {
 } & UseRequestType<Payload, Result> &
   UseGroupRequestType<Payload, Result>;
 
-interface ILeitenGroupRequestOption<Payload, Result>
+export interface ILeitenGroupRequestOption<Payload, Result>
   extends ILeitenRequestOptions<ILeitenGroupRequestParams<Payload>, Result> {
   initialContent?: Result | ((key: string) => Result);
 }
 
-interface ILeitenGroupRequestArrayOption<Payload, Result>
+export interface ILeitenGroupRequestArrayOption<Payload, Result>
   extends ILeitenGroupRequestOption<Payload, Result> {
   getKey: (value: Result) => string;
 }
-
-type AcceptableType<Store extends object> = void | DotNestedValue<
-  Store,
-  DotNestedKeys<Store>
-> | null;
 
 export const leitenGroupRequest = <
   Store extends object,
@@ -78,10 +77,10 @@ export const leitenGroupRequest = <
   Payload,
   Result extends DotNestedValue<Store, P> extends Record<
     string,
-    AcceptableType<Store>
+    AcceptableGroupRequestType<Store>
   >
     ? DotNestedValue<Store, P>[string]
-    : DotNestedValue<Store, P> extends Array<AcceptableType<Store>>
+    : DotNestedValue<Store, P> extends Array<AcceptableGroupRequestType<Store>>
     ? DotNestedValue<Store, P>[number]
     : DotNestedValue<Store, P>
 >(
@@ -98,7 +97,7 @@ export const leitenGroupRequest = <
   ) => Promise<Result>,
   options?: DotNestedValue<Store, P> extends Record<
     string,
-    AcceptableType<Store>
+    AcceptableGroupRequestType<Store>
   >
     ? ILeitenGroupRequestOption<Payload, Result>
     : ILeitenGroupRequestArrayOption<Payload, Result>
@@ -161,9 +160,9 @@ export const leitenGroupRequest = <
     requests[key] = leitenRequest(store, pathWithKey, payload, options);
   };
 
-  const call = (
+  const action = (
     params: ILeitenGroupRequestParams<Payload>[],
-    options?: ICallOptions
+    options?: IGroupCallOptions
   ) => {
     params.forEach(({ key, params }) => {
       const request = requests[key];
@@ -246,25 +245,12 @@ export const leitenGroupRequest = <
     }
   }
 
-  setTimeout(() => {
-    const resettable =
-      (store.getState() as any)["_resettableLifeCycle"] !== undefined;
-    if (resettable) {
-      store.subscribe((next, prev) => {
-        if (
-          (next as any)["_resettableLifeCycle"] === false &&
-          (prev as any)["_resettableLifeCycle"] === true
-        )
-          clear();
-      });
-    }
-  }, 0);
+  resettableStoreSubscription(store, () => clear());
 
-  return Object.assign(hook, { clear, call, requests });
+  return Object.assign(hook, { clear, action, requests, call: action });
 };
 
 const nonTypedReturn = (value: any) => value;
-
 const checkInitial = <Result>(
   value: Result | ((key: string) => Result)
 ): value is (key: string) => Result => typeof value === "function";

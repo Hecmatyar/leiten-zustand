@@ -34,7 +34,7 @@ const useController = leiten[Controller](useStore, "dot.nested.path", [options])
 
 ### Small Example
 
-Let's create some fake example: load some data and then change it.
+Let's create some fake example - load data and then change it.
 
 #### Pure zustand
 
@@ -66,6 +66,8 @@ const useStore = create<IStore>((set, get) => ({
 #### With leiten controllers
 
 ```tsx
+import { leitenRequest, leitenRecord, leitenList } from "leiten-zustand"
+
 const useStore = create<IStore>(() => ({
   data: { user: null, cards: [] },
 }));
@@ -91,7 +93,7 @@ store. [Examples](https://github.com/Hecmatyar/leiten-zustand/tree/main/src/exam
   methods such as _action_, _clear_, _abort_, and _set_.
 - [leitenGroupRequest](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/6_Controller_GroupRequest.tsx)
   Handles multiple similar requests dynamically. Returns a **hook** with two overloads and provides methods such
-  as _call_ and _clear_. Can work with arrays as well as with the normalized list.
+  as _action_ and _clear_. Can work with arrays as well as with the normalized list.
 - [leitenRecord](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/2_Controller_Record.tsx)
   Works with objects and provides methods such as _set_, _patch_ and _clear_.
 - [leitenPrimitive](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/3_Controller_Primitive.tsx)
@@ -102,10 +104,16 @@ store. [Examples](https://github.com/Hecmatyar/leiten-zustand/tree/main/src/exam
   the array item
   is an object, a **compare** function needs to be set in the controller's options (third parameter).
 - [leitenNormalizedList](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/4_Controller_List.tsx)
-  Same as leitenList but works with normalized state.
+  Same as **leitenList** but works with normalized state.
 - [leitenModal](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/5_Controller_Modal.tsx)
   Helps work with modals and provides a built-in modal manager for cascading modals. Returns hooks
   with [openState, hiddenState] and provides methods such as _open_, _close_ and _action_.
+- [leitenFilterRequest]() Same as **leitenRequest** but provide _createFilter_ method, which allows you to create an
+  unlimited number of filters for the request. The request will automatically start _action_ when the filter's _patch_
+  method is called.
+- [leitenGroupFilterRequest]() Same as **leitenGroupRequest** but provide _createFilter_ method, which allows you to
+  create an
+  unlimited number of filters for the request. Works like leitenFilterRequest.
 
 > All leitenControllers automatically infer the required types based on the specified path and will throw a **TypeScript
 > error** if the provided path does not match the controller's requirements or established types.
@@ -167,6 +175,59 @@ const recordController = leitenRequest(useExampleStore, "user", async (id: strin
 - leitenList - if you are using object then you also should specify **compare** function like in example
 - leitenNormalizedList - in addition to the **compare** function, you also need to define the **getKey** function
 
+### Store
+
+The library provides wrappers
+for [ContextStore](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/store/ContextStore.tsx)
+and [ResettableStore](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/store/ResettableStore.tsx).
+These wrappers can be used to enhance your Zustand store with additional features.
+
+### FilterRequest
+
+Usage example. There can be an unlimited number of filters. After the patch, inside
+the **lateFilterRequest**, a comparison is made with the previous filter value and the request is executed. From one
+filter
+you can influence the state of other filters
+
+```tsx
+interface IState {
+  users: IUser[];
+  filter: IFilter;
+  table: ITableFilter;
+}
+
+const useExampleStore = create<IState>(() => ({
+  user: [],
+  filter: { search: "" },
+  table: { page: 1 }
+}));
+
+const useController = leitenFilterRequest(useExampleStore, "users", async () => {
+  const props = useExampleStore().getState().filter.search;
+  return getUser(props)
+});
+
+const filter = useController.createFilter(useExampleStore, "filter", {
+  sideEffect: () => {
+    useExampleStore.setState({ table: { page: 1 } })
+  }
+});
+
+const tableFilter = useController.createFilter(useExampleStore, "table");
+
+const User = () => {
+  useEffect(() => {
+    //initial call
+    useController.action();
+  }, [])
+
+  return <>
+    <input onChange={event => filter.patch({ search: event.target.value })} />
+    <UserTable />
+  </>
+}
+```
+
 ### Request
 
 All requests working with **useLeitenRequests**. Usually you will never need it, but if you need it, then the record is
@@ -226,6 +287,7 @@ interface IState {
 const useExampleStore = create<IState>(() => ({
   cards: {},
 }));
+
 export const useGroupController = leitenGroupRequest(
   useExampleStore,
   "cards",
@@ -235,13 +297,6 @@ export const useGroupController = leitenGroupRequest(
 );
 
 const status = useGroupController(id, (state) => state.status); //First param is key, better option
-or
+// or
 const requests = useGroupController((state) => state); // Record with all requests
 ```
-
-### Store
-
-The library provides wrappers
-for [ContextStore](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/store/ContextStore.tsx)
-and [ResettableStore](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/store/ResettableStore.tsx).
-These wrappers can be used to enhance your Zustand store with additional features.

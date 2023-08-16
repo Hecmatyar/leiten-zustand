@@ -11,6 +11,7 @@ interface ILeitenPrimitiveEffects<VALUE, State> {
 
 export type ILeitenPrimitive<VALUE> = {
   set: (value: VALUE) => void;
+  get: () => VALUE;
   clear: () => void;
 };
 
@@ -40,15 +41,18 @@ export const leitenPrimitive = <
       set(draft, path, next);
     });
     const nextState = effects?.patchEffect
-      ? { ...effects.patchEffect(next), ...draftState }
+      ? { ...draftState, ...effects.patchEffect(next) }
       : draftState;
     store.setState(nextState);
     effects?.sideEffect?.({ prev, next });
   };
 
   const clear = () => {
-    setState(initialValue);
+    const nextState = produce(store.getState(), (draft) => {
+      set(draft, path, initialValue);
+    });
+    store.setState(nextState);
   };
 
-  return { set: setState, clear };
+  return { set: setState, get: getState, clear };
 };

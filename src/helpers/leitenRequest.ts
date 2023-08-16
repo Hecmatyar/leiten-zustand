@@ -29,7 +29,7 @@ export interface ILeitenRequest<Payload, Result>
   ) => void;
   set: (value: Partial<Result> | void, rewrite?: boolean) => void;
   key: string;
-  getState: () => ILeitenLoading<Payload, Result>;
+  get: () => ILeitenLoading<Payload, Result>;
 }
 
 export interface ILeitenRequestCallback<Payload, Result> {
@@ -201,21 +201,9 @@ export const leitenRequest = <
     );
   };
 
-  setTimeout(() => {
-    const resettable =
-      (store.getState() as any)["_resettableLifeCycle"] !== undefined;
-    if (resettable) {
-      store.subscribe((next, prev) => {
-        if (
-          (next as any)["_resettableLifeCycle"] === false &&
-          (prev as any)["_resettableLifeCycle"] === true
-        )
-          setState(initialState);
-      });
-    }
-  }, 0);
+  resettableStoreSubscription(store, () => setState(initialState));
 
-  const _getState = () => {
+  const _get = () => {
     return useLeitenRequests.getState()[key];
   };
 
@@ -225,12 +213,31 @@ export const leitenRequest = <
     clear,
     set: _set,
     key,
-    getState: _getState,
+    get: _get,
   });
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nonTypedReturn = (value: any) => value;
+
+export const resettableStoreSubscription = (
+  store: StoreApi<object>,
+  callback: () => void
+) => {
+  setTimeout(() => {
+    const resettable =
+      (store.getState() as any)["_resettableLifeCycle"] !== undefined;
+    if (resettable) {
+      store.subscribe((next, prev) => {
+        if (
+          (next as any)["_resettableLifeCycle"] === false &&
+          (prev as any)["_resettableLifeCycle"] === true
+        )
+          callback();
+      });
+    }
+  }, 0);
+};
 
 function createAsyncActions<Payload, Result>(
   payloadCreator: (
@@ -284,7 +291,7 @@ interface IReaction<Payload, Result> {
   ) => void;
 }
 
-type IExtraArgument = {
+export type IExtraArgument = {
   signal: AbortSignal;
   // requestId: string
 };

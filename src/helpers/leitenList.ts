@@ -3,6 +3,7 @@ import { get, isArray, set } from "lodash-es";
 import { StoreApi } from "zustand/esm";
 
 import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
+import { defaultCompareList } from "./leitenNormalizedList";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -15,7 +16,6 @@ export type ILeitenList<ITEM> = {
   clear: () => void;
   filter: (validate: (item: ITEM) => boolean) => void;
 };
-
 type ArrayElement<ArrType> = ArrType extends readonly (infer ElementType)[]
   ? ElementType
   : never;
@@ -38,7 +38,9 @@ export const leitenList = <
       : never
     : never,
   params?: ILeitenListEffects<ArrayElement<DotNestedValue<Store, P>>, Store>
-): ILeitenList<ArrayElement<DotNestedValue<Store, P>>> => {
+): ILeitenList<ArrayElement<DotNestedValue<Store, P>>> & {
+  get: () => ArrayElement<DotNestedValue<Store, P>>[];
+} => {
   type ITEM = ArrayElement<DotNestedValue<Store, P>>;
   const initialValue = get(store.getState(), path, "_empty") as ITEM[];
   if ((initialValue as any) === "_empty") {
@@ -49,18 +51,18 @@ export const leitenList = <
 
   const compare = params?.compare || defaultCompareList;
 
-  const setState = (value: ITEM[]) => {
+  const _set = (value: ITEM[]) => {
     const draftState = produce(store.getState(), (draft) => {
       set(draft, path, value);
     });
     const nextState = params?.patchEffect
-      ? { ...params.patchEffect(value), ...draftState }
+      ? { ...draftState, ...params.patchEffect(value) }
       : draftState;
     store.setState(nextState);
     params?.sideEffect?.();
   };
 
-  const getState = (): ITEM[] => {
+  const _get = (): ITEM[] => {
     const array = get(store.getState(), path, initialValue);
     if (isArray(array)) {
       return array;
@@ -72,56 +74,57 @@ export const leitenList = <
   const add = (items: ITEM[] | ITEM) => {
     if (Array.isArray(items)) {
       const values = items.filter((existing) =>
-        getState().every((item) => !compare(existing, item))
+        _get().every((item) => !compare(existing, item))
       );
-      setState([...getState(), ...values]);
+      _set([..._get(), ...values]);
     } else {
-      const values = getState().every((item) => !compare(items, item))
+      const values = _get().every((item) => !compare(items, item))
         ? [items]
         : [];
-      setState([...getState(), ...values]);
+      _set([..._get(), ...values]);
     }
   };
 
   const clear = () => {
-    setState(initialValue || []);
+    const nextState = produce(store.getState(), (draft) => {
+      set(draft, path, initialValue || []);
+    });
+    store.setState(nextState);
   };
 
   const remove = (items: ITEM[] | ITEM) => {
     if (Array.isArray(items)) {
-      setState(
-        getState().filter(
+      _set(
+        _get().filter(
           (item) => !items.find((removeItem) => compare(item, removeItem))
         )
       );
     } else {
-      setState(getState().filter((item) => !compare(item, items)));
+      _set(_get().filter((item) => !compare(item, items)));
     }
   };
 
   const filter = (validate: (item: ITEM) => boolean) => {
-    setState(getState().filter(validate));
+    _set(_get().filter(validate));
   };
 
   const update = (items: ITEM[] | ITEM) => {
     if (Array.isArray(items)) {
-      setState(
-        getState().map((existing) => {
+      _set(
+        _get().map((existing) => {
           const item = items.find((item) => compare(existing, item));
           return item || existing;
         })
       );
     } else {
-      setState(
-        getState().map((existing) =>
-          compare(existing, items) ? items : existing
-        )
+      _set(
+        _get().map((existing) => (compare(existing, items) ? items : existing))
       );
     }
   };
 
   const toggle = (item: ITEM) => {
-    const exist = !!getState().find((_item) => compare(item, _item));
+    const exist = !!_get().find((_item) => compare(item, _item));
 
     if (exist) {
       remove(item);
@@ -130,8 +133,5 @@ export const leitenList = <
     }
   };
 
-  return { set: setState, clear, toggle, update, filter, remove, add };
+  return { set: _set, get: _get, clear, toggle, update, filter, remove, add };
 };
-
-const defaultCompareList = <ITEM>(left: ITEM, right: ITEM): boolean =>
-  left === right;
