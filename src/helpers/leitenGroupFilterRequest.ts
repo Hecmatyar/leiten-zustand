@@ -141,7 +141,7 @@ export const leitenGroupFilterRequest = <
     });
   });
 
-  const clear = () => {
+  const clearAll = () => {
     leiten.clear();
     const keys = Object.keys(leiten.requests);
     Object.keys(filters).forEach((key) =>
@@ -149,7 +149,7 @@ export const leitenGroupFilterRequest = <
     );
   };
 
-  return Object.assign(leiten, { createFilter, clear });
+  return Object.assign(leiten, { createFilter, clearAll });
 };
 
 interface IGroupRecord<VALUE> {

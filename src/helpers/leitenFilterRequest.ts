@@ -97,13 +97,13 @@ export const leitenFilterRequest = <
     prevFilters = cloneDeep(initialFilters);
   });
 
-  const clear = () => {
+  const clearAll = () => {
     leiten.clear();
     Object.keys(filters).forEach((key) => filters[key].clear());
     leiten.action();
   };
 
-  return Object.assign(leiten, { createFilter, clear });
+  return Object.assign(leiten, { createFilter, clearAll });
 };
 
 export interface IObjectDifferent<S = any> {
