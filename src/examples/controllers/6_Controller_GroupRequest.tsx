@@ -66,7 +66,7 @@ const Card = ({ id }: { id: string }) => {
       {status !== "loaded" && (
         <button
           onClick={() =>
-            useGroupController.call([{ key: id, params: id }], {
+            useGroupController.action([{ key: id, params: id }], {
               status: "waiting",
             })
           }
