@@ -1,6 +1,7 @@
 import { produce } from "immer";
 import { get, isEqual, set } from "lodash-es";
 import { nanoid } from "nanoid";
+import { useEffect, useState } from "react";
 import { StoreApi } from "zustand";
 import { shallow } from "zustand/shallow";
 
@@ -14,7 +15,9 @@ import {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-type UseRequestType<Payload, Result> = <U = ILeitenLoading<Payload, Result>>(
+export type UseRequestType<Payload, Result> = <
+  U = ILeitenLoading<Payload, Result>
+>(
   selector?: (state: ILeitenLoading<Payload, Result>) => U,
   equals?: (a: U, b: U) => boolean
 ) => U;
@@ -194,7 +197,18 @@ export const leitenRequest = <
     setContent(initialContent);
   };
 
+  const usages: Record<string, boolean> = {};
   const useRequest: UseRequestType<Payload, Result> = (selector, equals) => {
+    const [id] = useState(() => nanoid());
+
+    useEffect(() => {
+      usages[id] = true;
+
+      return () => {
+        usages[id] = false;
+      };
+    }, []);
+
     return useLeitenRequests(
       (state) => (selector || nonTypedReturn)(state[key] || initialState),
       shallow || equals
@@ -214,6 +228,7 @@ export const leitenRequest = <
     set: _set,
     key,
     get: _get,
+    _usages: usages,
   });
 };
 

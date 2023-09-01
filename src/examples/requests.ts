@@ -52,3 +52,20 @@ export const getCard = async (param: string): Promise<ICard> => {
     }, 2000);
   });
 };
+
+export interface IChartFilter {
+  period: "today" | "yesterday" | "latsWeek" | "lastMonth";
+  type: "sales" | "income";
+}
+
+export const getChart = async (
+  filter: IChartFilter,
+  signal?: AbortSignal
+): Promise<number[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const result: number[] = Array(100).fill(2);
+      resolve(result);
+    }, 2000);
+  });
+};

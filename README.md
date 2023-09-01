@@ -108,10 +108,12 @@ store. [Examples](https://github.com/Hecmatyar/leiten-zustand/tree/main/src/exam
 - [leitenModal](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/5_Controller_Modal.tsx)
   Helps work with modals and provides a built-in modal manager for cascading modals. Returns hooks
   with [openState, hiddenState] and provides methods such as _open_, _close_ and _action_.
-- [leitenFilterRequest]() Same as **leitenRequest** but provide _createFilter_ method, which allows you to create an
+- [leitenFilterRequest](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/7_Controller_FilterRequest.tsx)
+  Same as **leitenRequest** but provide _createFilter_ and _listen_ methods, which allows you to create an
   unlimited number of filters for the request. The request will automatically start _action_ when the filter's _patch_
-  method is called.
-- [leitenGroupFilterRequest]() Same as **leitenGroupRequest** but provide _createFilter_ method, which allows you to
+  method is called. Or in case _listen_, the request will be executed if the observed value changes.
+- [leitenGroupFilterRequest](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/7_Controller_FilterRequest.tsx)
+  Same as **leitenGroupRequest** but provide _createFilter_ method, which allows you to
   create an
   unlimited number of filters for the request. Works like leitenFilterRequest.
 
@@ -207,13 +209,14 @@ const useController = leitenFilterRequest(useExampleStore, "users", async () => 
   return getUser(props)
 });
 
-const filter = useController.createFilter(useExampleStore, "filter", {
+const filter = useController.createFilter("filter", {
   sideEffect: () => {
     useExampleStore.setState({ table: { page: 1 } })
   }
 });
+const tableFilter = useController.createFilter("table");
 
-const tableFilter = useController.createFilter(useExampleStore, "table");
+useController.listen(useAnotherStore, "period"); // create listener for the external store
 
 const User = () => {
   useEffect(() => {
