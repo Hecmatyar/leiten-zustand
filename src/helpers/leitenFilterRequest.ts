@@ -16,7 +16,6 @@ import {
 } from "./leitenRequest";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 type RecordFilter<T> = {
   (initialObject?: T): IObjectDifferent[];
 } & ILeitenRecord<T>;
@@ -27,7 +26,7 @@ type PrimitiveFilter<Y> = {
 export const leitenFilterRequest = <
   Store extends object,
   Path extends DotNestedKeys<Store>,
-  Result extends DotNestedValue<Store, Path> | null | void
+  Result extends DotNestedValue<Store, Path> | null | void,
 >(
   store: UseBoundStore<StoreApi<Store>>,
   path: Path extends string
@@ -38,7 +37,7 @@ export const leitenFilterRequest = <
       : never
     : never,
   request: (params: void, extraArgument?: IExtraArgument) => Promise<Result>,
-  options?: ILeitenRequestOptions<void, Result>
+  options?: ILeitenRequestOptions<void, Result>,
 ) => {
   const leiten = leitenRequest(store, path, request, {
     ...options,
@@ -55,7 +54,7 @@ export const leitenFilterRequest = <
 
   const createFilter = <Path extends DotNestedKeys<Store>>(
     path: Path extends string ? Path : never,
-    options?: ILeitenRecordEffects<DotNestedValue<Store, Path>, Store>
+    options?: ILeitenRecordEffects<DotNestedValue<Store, Path>, Store>,
   ): DotNestedValue<Store, Path> extends object
     ? RecordFilter<DotNestedValue<Store, Path>>
     : PrimitiveFilter<DotNestedValue<Store, Path>> => {
@@ -65,13 +64,13 @@ export const leitenFilterRequest = <
     const initial = get(store.getState(), path, undefined);
 
     function hook(
-      initialObject?: DotNestedValue<Store, Path>
+      initialObject?: DotNestedValue<Store, Path>,
     ): IObjectDifferent[] {
       return store((state) =>
         getObjectDifference(
           get(state, path, initialObject || initial),
-          initialObject || initial
-        )
+          initialObject || initial,
+        ),
       );
     }
 
@@ -94,7 +93,7 @@ export const leitenFilterRequest = <
 
   const listen = <
     ExternalStore extends object,
-    ExternalPath extends DotNestedKeys<ExternalStore>
+    ExternalPath extends DotNestedKeys<ExternalStore>,
   >(
     store: UseBoundStore<StoreApi<ExternalStore>>,
     path: ExternalPath extends string ? ExternalPath : never,
@@ -103,18 +102,16 @@ export const leitenFilterRequest = <
         prev: DotNestedValue<ExternalStore, ExternalPath>;
         next: DotNestedValue<ExternalStore, ExternalPath>;
       }) => void;
-    }
+    },
   ) => {
-    let prevValue = get(store.getState(), path);
     const haveSubscription = () =>
       !!Object.values((leiten as any)._usages || {}).filter((item) => item)
         .length;
-
-    return store.subscribe((state) => {
+    return store.subscribe((state, prevState) => {
+      const prevValue = get(prevState, path);
       const value = get(state, path);
 
       if (haveSubscription() && !isEqual(prevValue, value)) {
-        prevValue = value;
         options?.sideEffect?.({ prev: prevValue, next: value });
 
         pureAction().then();
@@ -141,7 +138,7 @@ export const leitenFilterRequest = <
         ...acc,
         [item]: get(store.getState(), item),
       }),
-      {}
+      {},
     );
   };
 
@@ -166,7 +163,7 @@ export interface IObjectDifferent<S = any> {
 
 export const getObjectDifference = <S>(
   next: any,
-  prev: any
+  prev: any,
 ): IObjectDifferent<S>[] => {
   if (typeof next !== "object") {
     if (!isEqual(next, prev)) {

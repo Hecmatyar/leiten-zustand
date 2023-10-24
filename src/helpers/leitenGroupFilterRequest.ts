@@ -4,6 +4,7 @@ import { StoreApi } from "zustand";
 import { UseBoundStore } from "zustand/esm";
 
 import {
+  ArrayElementType,
   DotNestedKeys,
   DotNestedValue,
   ValueOf,
@@ -17,7 +18,7 @@ import {
   leitenGroupRequest,
 } from "./leitenGroupRequest";
 import { ILeitenRecordEffects } from "./leitenRecord";
-import { resettableStoreSubscription } from "./leitenRequest";
+import { IExtraArgument, resettableStoreSubscription } from "./leitenRequest";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const leitenGroupFilterRequest = <
@@ -27,10 +28,8 @@ export const leitenGroupFilterRequest = <
     string,
     AcceptableGroupRequestType<Store>
   >
-    ? NonNullable<DotNestedValue<Store, P>[string]>
-    : DotNestedValue<Store, P> extends Array<AcceptableGroupRequestType<Store>>
-    ? NonNullable<DotNestedValue<Store, P>[number]>
-    : DotNestedValue<Store, P>
+    ? ValueOf<DotNestedValue<Store, P>>
+    : ArrayElementType<DotNestedValue<Store, P>>,
 >(
   store: UseBoundStore<StoreApi<Store>>,
   path: P extends string
@@ -40,13 +39,16 @@ export const leitenGroupFilterRequest = <
       ? P
       : never
     : never,
-  request: (params: ILeitenGroupRequestParams<void>) => Promise<Result>,
+  request: (
+    params: ILeitenGroupRequestParams<void>,
+    extraArgument?: IExtraArgument,
+  ) => Promise<Result>,
   options?: DotNestedValue<Store, P> extends Record<
     string,
     AcceptableGroupRequestType<Store>
   >
     ? ILeitenGroupRequestOption<void, Result>
-    : ILeitenGroupRequestArrayOption<void, Result>
+    : ILeitenGroupRequestArrayOption<void, Result>,
 ) => {
   const leiten = leitenGroupRequest(store, path, request, {
     ...options,
@@ -55,7 +57,12 @@ export const leitenGroupFilterRequest = <
       updatePrevFilters(key);
       return options?.action?.(args);
     },
-  } as DotNestedValue<Store, P> extends Record<string, AcceptableGroupRequestType<Store>> ? ILeitenGroupRequestOption<void, Result> : ILeitenGroupRequestArrayOption<void, Result>);
+  } as DotNestedValue<Store, P> extends Record<
+    string,
+    AcceptableGroupRequestType<Store>
+  >
+    ? ILeitenGroupRequestOption<void, Result>
+    : ILeitenGroupRequestArrayOption<void, Result>);
 
   const filters: Record<string, IGroupRecord<any>> = {};
   const prevFilters: Record<string, Record<string, any>> = {};
@@ -71,17 +78,17 @@ export const leitenGroupFilterRequest = <
       Store
     > & {
       initialValue: ValueOf<DotNestedValue<Store, Path>>;
-    }
+    },
   ) => {
     prevFilters[path] = {};
     type VALUE = ValueOf<DotNestedValue<Store, Path>>;
 
     function hook(
       key: string,
-      referenceObject?: VALUE
+      referenceObject?: VALUE,
     ): IObjectDifferent<VALUE>[] {
       return store((state) =>
-        getObjectDifference(get(state, `${path}.${key}`), referenceObject)
+        getObjectDifference(get(state, `${path}.${key}`), referenceObject),
       );
     }
 
@@ -145,7 +152,7 @@ export const leitenGroupFilterRequest = <
     leiten.clear();
     const keys = Object.keys(leiten.requests);
     Object.keys(filters).forEach((key) =>
-      keys.forEach((k) => filters[key]?.clear(k))
+      keys.forEach((k) => filters[key]?.clear(k)),
     );
   };
 

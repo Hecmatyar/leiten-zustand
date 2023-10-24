@@ -1,16 +1,22 @@
 import { produce } from "immer";
 import { get, set } from "lodash-es";
 import { StoreApi } from "zustand/esm";
-import { shallow } from "zustand/shallow";
+import { useShallow } from "zustand/react/shallow";
 
 import { useLeitenRequests } from "../hooks/useLeitenRequest";
-import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
+import {
+  ArrayElementType,
+  DotNestedKeys,
+  DotNestedValue,
+  ValueOf,
+} from "../interfaces/dotNestedKeys";
 import {
   ILeitenLoading,
   ILoadingStatus,
   initialLeitenLoading,
 } from "../interfaces/IContentLoading";
 import {
+  IExtraArgument,
   ILeitenRequest,
   ILeitenRequestOptions,
   leitenRequest,
@@ -40,19 +46,17 @@ type LeitenState<Payload, Result> = ILeitenLoading<
 type UseRequestType<Payload, Result> = <U = LeitenState<Payload, Result>>(
   key: string,
   selector?: (state: LeitenState<Payload, Result>) => U,
-  equals?: (a: U, b: U) => boolean
 ) => U;
 
 type UseGroupRequestType<Payload, Result> = <U = LeitenState<Payload, Result>>(
   selector?: (state: Record<string, LeitenState<Payload, Result>>) => U,
-  equals?: (a: U, b: U) => boolean
 ) => U;
 
 export type ILeitenGroupRequest<Payload, Result> = {
   clear: (key?: string) => void;
   action: (
     params: ILeitenGroupRequestParams<Payload>[],
-    options?: IGroupCallOptions
+    options?: IGroupCallOptions,
   ) => void;
   requests: Record<
     string,
@@ -79,28 +83,27 @@ export const leitenGroupRequest = <
     string,
     AcceptableGroupRequestType<Store>
   >
-    ? DotNestedValue<Store, P>[string]
-    : DotNestedValue<Store, P> extends Array<AcceptableGroupRequestType<Store>>
-    ? DotNestedValue<Store, P>[number]
-    : DotNestedValue<Store, P>
+    ? ValueOf<DotNestedValue<Store, P>>
+    : ArrayElementType<DotNestedValue<Store, P>>,
 >(
   store: StoreApi<Store>,
   path: P extends string
     ? Result extends void
       ? P
-      : DotNestedValue<Store, P> extends Record<string, Result> | Array<Result>
+      : DotNestedValue<Store, P> extends Record<string, Result> | Array<any>
       ? P
       : never
     : never,
   payloadCreator: (
-    params: ILeitenGroupRequestParams<Payload>
+    params: ILeitenGroupRequestParams<Payload>,
+    extraArgument?: IExtraArgument,
   ) => Promise<Result>,
   options?: DotNestedValue<Store, P> extends Record<
     string,
     AcceptableGroupRequestType<Store>
   >
     ? ILeitenGroupRequestOption<Payload, Result>
-    : ILeitenGroupRequestArrayOption<Payload, Result>
+    : ILeitenGroupRequestArrayOption<Payload, Result>,
 ): ILeitenGroupRequest<Payload, Result> => {
   const initialRequestState = initialLeitenLoading<
     ILeitenGroupRequestParams<Payload>,
@@ -119,8 +122,8 @@ export const leitenGroupRequest = <
     const find = source.findIndex(
       (s) =>
         (options as ILeitenGroupRequestArrayOption<Payload, Result>)?.getKey?.(
-          s
-        ) === key
+          s,
+        ) === key,
     );
     const index = find !== -1 ? find : source.length;
     const withKey = (path + `["${index}"]`) as DotNestedKeys<Store>;
@@ -135,8 +138,11 @@ export const leitenGroupRequest = <
       pathWithKey = before.withKey;
       // eslint-disable-next-line
       // @ts-ignore
-      payload = async (params: ILeitenGroupRequestParams<Payload>) => {
-        const result = await payloadCreator(params);
+      payload = async (
+        params: ILeitenGroupRequestParams<Payload>,
+        extraArgument?: IExtraArgument,
+      ) => {
+        const result = await payloadCreator(params, extraArgument);
         const after = getPathToArrayItem(key);
         if ((before.isNew && after.isNew) || !after.isNew) {
           const nextState = produce(store.getState(), (draft) => {
@@ -147,6 +153,7 @@ export const leitenGroupRequest = <
       };
     } else {
       pathWithKey = (path + `.${key}`) as DotNestedKeys<Store>;
+
       if (options?.initialContent) {
         const initial = checkInitial(options.initialContent)
           ? options.initialContent(key)
@@ -157,12 +164,14 @@ export const leitenGroupRequest = <
         store.setState(nextState);
       }
     }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     requests[key] = leitenRequest(store, pathWithKey, payload, options);
   };
 
   const action = (
     params: ILeitenGroupRequestParams<Payload>[],
-    options?: IGroupCallOptions
+    options?: IGroupCallOptions,
   ) => {
     params.forEach(({ key, params }) => {
       const request = requests[key];
@@ -182,52 +191,48 @@ export const leitenGroupRequest = <
       !isArray && requests[key].clear();
       delete requests[key];
     } else {
-      set(store, path, {});
+      const nextState = produce(store.getState(), (draft) => {
+        set(draft, path, {});
+      });
+      store.setState(nextState);
       requests = {};
     }
   };
 
-  const useRequest: UseRequestType<Payload, Result> = (
-    key,
-    selector,
-    equals
-  ) => {
+  const useRequest: UseRequestType<Payload, Result> = (key, selector) => {
     return useLeitenRequests((state) => {
       const id = requests[key]?.key;
       return (selector || nonTypedReturn)(
-        (id && state[id]) || initialRequestState
+        (id && state[id]) || initialRequestState,
       );
-    }, shallow || equals);
+    });
   };
 
-  const useGroupRequest: UseGroupRequestType<Payload, Result> = (
-    selector,
-    equals
-  ) => {
+  const useGroupRequest: UseGroupRequestType<Payload, Result> = (selector) => {
     return useLeitenRequests(
-      (state: Record<string, LeitenState<Payload, Result>>) => {
+      useShallow((state: Record<string, LeitenState<Payload, Result>>) => {
         const keys = Object.entries(requests).map(([id, value]) => ({
           id,
           key: value.key,
         }));
-        const requestsStore: typeof state = keys.reduce((acc, { id, key }) => {
-          return Object.assign(acc, { [id]: state[key] });
-        }, {} as typeof state);
+        const requestsStore: typeof state = keys.reduce(
+          (acc, { id, key }) => {
+            return Object.assign(acc, { [id]: state[key] });
+          },
+          {} as typeof state,
+        );
 
         return (selector || nonTypedReturn)(requestsStore);
-      },
-      shallow || equals
+      }),
     );
   };
 
   function hook<Payload, Result, U = LeitenState<Payload, Result>>(
     key: string,
     selector?: (state: LeitenState<Payload, Result>) => U,
-    equals?: (a: U, b: U) => boolean
   ): U;
   function hook<Payload, Result, U = LeitenState<Payload, Result>>(
     selector?: (state: Record<string, LeitenState<Payload, Result>>) => U,
-    equals?: (a: U, b: U) => boolean
   ): U;
   function hook<Payload, Result, U = LeitenState<Payload, Result>>(
     first?:
@@ -236,12 +241,11 @@ export const leitenGroupRequest = <
     second?:
       | ((state: LeitenState<Payload, Result>) => U)
       | ((a: U, b: U) => boolean),
-    third?: (a: U, b: U) => boolean
   ): U {
     if (first !== undefined && typeof first === "string") {
-      return useRequest(first, second as any, third);
+      return useRequest(first, second as any);
     } else {
-      return useGroupRequest(first as any, second as any) as any;
+      return useGroupRequest(first as any) as any;
     }
   }
 
@@ -250,7 +254,8 @@ export const leitenGroupRequest = <
   return Object.assign(hook, { clear, action, requests, call: action });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nonTypedReturn = (value: any) => value;
 const checkInitial = <Result>(
-  value: Result | ((key: string) => Result)
+  value: Result | ((key: string) => Result),
 ): value is (key: string) => Result => typeof value === "function";

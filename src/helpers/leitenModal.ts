@@ -2,7 +2,6 @@ import { produce } from "immer";
 import { get, set } from "lodash-es";
 import { nanoid } from "nanoid";
 import { StoreApi } from "zustand";
-import { shallow } from "zustand/shallow";
 
 import {
   leitenModalManagerAction,
@@ -26,7 +25,7 @@ export interface ILeitenModal<Data> {
 
 export const leitenModal = <
   Store extends object,
-  P extends DotNestedKeys<Store>
+  P extends DotNestedKeys<Store>,
 >(
   store: StoreApi<Store>,
   path: P extends string ? P : never,
@@ -36,7 +35,7 @@ export const leitenModal = <
       payload?: DotNestedValue<Store, P>;
     }) => void;
     clearOnClose?: boolean;
-  }
+  },
 ): ILeitenModal<DotNestedValue<Store, P>> => {
   type Data = DotNestedValue<Store, P>;
 
@@ -95,7 +94,7 @@ export const leitenModal = <
       const open = state.queue.includes(key);
       const hidden = open && state.queue[state.queue.length - 1] !== key;
       return [open, hidden] as [boolean, boolean];
-    }, shallow);
+    });
   };
 
   return Object.assign(useOpen, { action, close, open });

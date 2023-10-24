@@ -3,7 +3,6 @@ import { get, isEqual, set } from "lodash-es";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { StoreApi } from "zustand";
-import { shallow } from "zustand/shallow";
 
 import { useLeitenRequests } from "../hooks/useLeitenRequest";
 import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
@@ -16,10 +15,9 @@ import {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type UseRequestType<Payload, Result> = <
-  U = ILeitenLoading<Payload, Result>
+  U = ILeitenLoading<Payload, Result>,
 >(
   selector?: (state: ILeitenLoading<Payload, Result>) => U,
-  equals?: (a: U, b: U) => boolean
 ) => U;
 
 export interface ILeitenRequest<Payload, Result>
@@ -28,7 +26,7 @@ export interface ILeitenRequest<Payload, Result>
   clear: () => void;
   action: (
     params: Payload,
-    extraParams?: { status?: ILoadingStatus; requestId?: string }
+    extraParams?: { status?: ILoadingStatus; requestId?: string },
   ) => void;
   set: (value: Partial<Result> | void, rewrite?: boolean) => void;
   key: string;
@@ -45,19 +43,19 @@ export interface ILeitenRequestCallback<Payload, Result> {
 
 export interface ILeitenRequestOptions<Payload, Result> {
   fulfilled?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "error">
+    options: Omit<ILeitenRequestCallback<Payload, Result>, "error">,
   ) => void;
   rejected?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "result">
+    options: Omit<ILeitenRequestCallback<Payload, Result>, "result">,
   ) => void;
   abort?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "error" | "result">
+    options: Omit<ILeitenRequestCallback<Payload, Result>, "error" | "result">,
   ) => void;
   resolved?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "result" | "error">
+    options: Omit<ILeitenRequestCallback<Payload, Result>, "result" | "error">,
   ) => void;
   action?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "error" | "result">
+    options: Omit<ILeitenRequestCallback<Payload, Result>, "error" | "result">,
   ) => void;
   initialStatus?: ILoadingStatus;
   optimisticUpdate?: (params: Payload) => Result;
@@ -67,7 +65,7 @@ export const leitenRequest = <
   Store extends object,
   P extends DotNestedKeys<Store>,
   Payload,
-  Result extends DotNestedValue<Store, P> | null | void
+  Result extends DotNestedValue<Store, P> | null | void,
 >(
   store: StoreApi<Store>,
   path: P extends string
@@ -79,13 +77,13 @@ export const leitenRequest = <
     : never,
   payloadCreator: (
     params: Payload,
-    extraArgument?: IExtraArgument
+    extraArgument?: IExtraArgument,
   ) => Promise<Result>,
-  options?: ILeitenRequestOptions<Payload, Result>
+  options?: ILeitenRequestOptions<Payload, Result>,
 ): ILeitenRequest<Payload, Result> => {
   const key = nanoid(12);
   const initialState = initialLeitenLoading<Payload, Result>(
-    options?.initialStatus
+    options?.initialStatus,
   );
   const initialContent = get(store.getState(), path, null) as Result;
 
@@ -150,8 +148,8 @@ export const leitenRequest = <
     },
     fulfilled: (result: Result, payload: Payload, requestId: string) => {
       const state = getState();
+      setState({ ...state, status: "loaded" });
       if (requestId === state.requestId) {
-        setState({ ...state, status: "loaded" });
         if (
           result !== undefined &&
           (!options?.optimisticUpdate || !isEqual(previousResult, result))
@@ -198,7 +196,7 @@ export const leitenRequest = <
   };
 
   const usages: Record<string, boolean> = {};
-  const useRequest: UseRequestType<Payload, Result> = (selector, equals) => {
+  const useRequest: UseRequestType<Payload, Result> = (selector) => {
     const [id] = useState(() => nanoid());
 
     useEffect(() => {
@@ -209,9 +207,8 @@ export const leitenRequest = <
       };
     }, []);
 
-    return useLeitenRequests(
-      (state) => (selector || nonTypedReturn)(state[key] || initialState),
-      shallow || equals
+    return useLeitenRequests((state) =>
+      (selector || nonTypedReturn)(state[key] || initialState),
     );
   };
 
@@ -237,7 +234,7 @@ const nonTypedReturn = (value: any) => value;
 
 export const resettableStoreSubscription = (
   store: StoreApi<object>,
-  callback: () => void
+  callback: () => void,
 ) => {
   setTimeout(() => {
     const resettable =
@@ -257,9 +254,9 @@ export const resettableStoreSubscription = (
 function createAsyncActions<Payload, Result>(
   payloadCreator: (
     params: Payload,
-    extraArgument?: IExtraArgument
+    extraArgument?: IExtraArgument,
   ) => Promise<Result>,
-  extra?: IReaction<Payload, Result>
+  extra?: IReaction<Payload, Result>,
 ) {
   let controller = new AbortController();
   let signal = controller.signal;
@@ -272,7 +269,7 @@ function createAsyncActions<Payload, Result>(
 
   const action = (
     params: Payload,
-    options?: { status?: ILoadingStatus; requestId?: string }
+    options?: { status?: ILoadingStatus; requestId?: string },
   ) => {
     const requestId = options?.requestId || nanoid();
     extra?.action?.(params, options?.status, requestId);
@@ -302,7 +299,7 @@ interface IReaction<Payload, Result> {
   action?: (
     params: Payload,
     status?: ILoadingStatus,
-    requestId?: string
+    requestId?: string,
   ) => void;
 }
 

@@ -103,8 +103,6 @@ store. [Examples](https://github.com/Hecmatyar/leiten-zustand/tree/main/src/exam
   Works with arrays and provides methods such as _set_, _clear_, _add_, _update_, _remove_, _toggle_, and _filter_. If
   the array item
   is an object, a **compare** function needs to be set in the controller's options (third parameter).
-- [leitenNormalizedList](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/4_Controller_List.tsx)
-  Same as **leitenList** but works with normalized state.
 - [leitenModal](https://github.com/Hecmatyar/leiten-zustand/blob/main/src/examples/controllers/5_Controller_Modal.tsx)
   Helps work with modals and provides a built-in modal manager for cascading modals. Returns hooks
   with [openState, hiddenState] and provides methods such as _open_, _close_ and _action_.

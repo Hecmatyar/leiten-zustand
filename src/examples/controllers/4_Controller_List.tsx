@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { leitenList, leitenNormalizedList } from "../../helpers";
+import { leitenList } from "../../helpers";
 import { IKeyword } from "../requests";
 
 interface IState {
@@ -20,20 +20,13 @@ const useExampleStore = create<IState>(() => ({
 const listController = leitenList(useExampleStore, "info.keywords", {
   compare: (a, b) => a.value === b.value,
 });
-const normalizedListController = leitenNormalizedList(
-  useExampleStore,
-  "info.normalizedKeywords",
-  { getKey: (item) => item.value }
-);
 
 const Keywords = () => {
   const keywords = useExampleStore((state) => state.info.keywords);
 
   return (
     <>
-      {keywords?.map((k) => (
-        <Keyword item={k} />
-      ))}
+      {keywords?.map((k) => <Keyword item={k} />)}
       <button onClick={() => listController.add([{ value: "test", bid: 0 }])}>
         add
       </button>

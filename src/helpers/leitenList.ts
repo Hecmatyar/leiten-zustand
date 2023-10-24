@@ -1,137 +1,232 @@
 import { produce } from "immer";
-import { get, isArray, set } from "lodash-es";
+import { get, set } from "lodash-es";
 import { StoreApi } from "zustand/esm";
 
-import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
-import { defaultCompareList } from "./leitenNormalizedList";
+import {
+  ArrayElementType,
+  DotNestedKeys,
+  DotNestedValue,
+  NormalizedType,
+  ValueOf,
+} from "../interfaces/dotNestedKeys";
+import { AcceptableGroupRequestType } from "./leitenGroupRequest";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type ILeitenList<ITEM> = {
   set: (items: ITEM[]) => void;
   add: (items: ITEM[] | ITEM) => void;
-  remove: (items: ITEM[] | ITEM) => void;
+  remove: (items: ITEM[] | ITEM | string | string[]) => void;
   toggle: (item: ITEM) => void;
   update: (item: ITEM[] | ITEM) => void;
   clear: () => void;
   filter: (validate: (item: ITEM) => boolean) => void;
 };
-type ArrayElement<ArrType> = ArrType extends readonly (infer ElementType)[]
-  ? ElementType
-  : never;
 
-export interface ILeitenListEffects<ITEM, State> {
+export interface ILeitenListOptions<ITEM, State, SET> {
   compare?: (left: ITEM, right: ITEM) => boolean;
   sideEffect?: () => void;
-  patchEffect?: (items: ITEM[]) => Partial<State>;
+  patchEffect?: (items: SET) => Partial<State>;
+}
+
+export interface ILeitenNormalizedListOptions<ITEM, State, SET>
+  extends ILeitenListOptions<ITEM, State, SET> {
+  getKey: (item: ITEM) => string;
 }
 
 export const leitenList = <
   Store extends object,
-  P extends DotNestedKeys<Store>
+  P extends DotNestedKeys<Store>,
+  ITEM extends DotNestedValue<Store, P> extends Record<
+    string,
+    AcceptableGroupRequestType<Store>
+  >
+    ? ValueOf<DotNestedValue<Store, P>>
+    : ArrayElementType<DotNestedValue<Store, P>>,
+  SET extends DotNestedValue<Store, P> extends Record<
+    string,
+    AcceptableGroupRequestType<Store>
+  >
+    ? NormalizedType<ITEM>
+    : ITEM[],
 >(
   store: StoreApi<Store>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   path: P extends string
-    ? DotNestedValue<Store, P> extends Array<any> | null
+    ? ITEM extends void
+      ? P
+      : DotNestedValue<Store, P> extends Record<string, ITEM> | Array<any>
       ? P
       : never
     : never,
-  params?: ILeitenListEffects<ArrayElement<DotNestedValue<Store, P>>, Store>
-): ILeitenList<ArrayElement<DotNestedValue<Store, P>>> & {
-  get: () => ArrayElement<DotNestedValue<Store, P>>[];
-} => {
-  type ITEM = ArrayElement<DotNestedValue<Store, P>>;
-  const initialValue = get(store.getState(), path, "_empty") as ITEM[];
-  if ((initialValue as any) === "_empty") {
+  options?: DotNestedValue<Store, P> extends Record<
+    string,
+    AcceptableGroupRequestType<Store>
+  >
+    ? ILeitenNormalizedListOptions<ITEM, Store, SET>
+    : ILeitenListOptions<ITEM, Store, SET>,
+): ILeitenList<ITEM> & { get: () => SET } => {
+  const initialValue = get(store.getState(), path, "_empty") as SET;
+  if ((initialValue as any) === "_empty" || typeof initialValue !== "object") {
     throw new Error(
-      "[leitenList] The defined path does not match the required structure"
+      "[leitenList] The defined path does not match the required structure",
     );
   }
+  const isArray = Array.isArray(initialValue);
+  const compare = options?.compare || defaultCompareList;
+  const getKey = (options as ILeitenNormalizedListOptions<ITEM, Store, SET>)
+    ?.getKey;
 
-  const compare = params?.compare || defaultCompareList;
-
-  const _set = (value: ITEM[]) => {
+  const _setState = (value: SET) => {
     const draftState = produce(store.getState(), (draft) => {
       set(draft, path, value);
     });
-    const nextState = params?.patchEffect
-      ? { ...draftState, ...params.patchEffect(value) }
+    const nextState = options?.patchEffect
+      ? { ...draftState, ...options.patchEffect(value) }
       : draftState;
     store.setState(nextState);
-    params?.sideEffect?.();
+    options?.sideEffect?.();
   };
 
-  const _get = (): ITEM[] => {
-    const array = get(store.getState(), path, initialValue);
-    if (isArray(array)) {
-      return array;
+  const getState = (): SET => {
+    const value = get(store.getState(), path, "_empty");
+    if (value !== "_empty") {
+      return value;
     } else {
-      return [];
+      return initialValue;
     }
   };
 
+  const _set = (items: ITEM[]) => {
+    isArray
+      ? _setState(items as SET)
+      : _setState(_getMap(items, getKey) as SET);
+  };
+
   const add = (items: ITEM[] | ITEM) => {
-    if (Array.isArray(items)) {
-      const values = items.filter((existing) =>
-        _get().every((item) => !compare(existing, item))
-      );
-      _set([..._get(), ...values]);
-    } else {
-      const values = _get().every((item) => !compare(items, item))
+    if (isArray) {
+      const values = Array.isArray(items)
+        ? items.filter((existing) =>
+            (getState() as ITEM[]).every((item) => !compare(existing, item)),
+          )
+        : (getState() as ITEM[]).every((item) => !compare(items, item))
         ? [items]
         : [];
-      _set([..._get(), ...values]);
+
+      _setState([...(getState() as ITEM[]), ...values] as SET);
+    } else {
+      _setState({
+        ...getState(),
+        ..._getMap(Array.isArray(items) ? items : [items], getKey),
+      });
     }
   };
 
   const clear = () => {
     const nextState = produce(store.getState(), (draft) => {
-      set(draft, path, initialValue || []);
+      set(draft, path, initialValue);
     });
     store.setState(nextState);
   };
 
-  const remove = (items: ITEM[] | ITEM) => {
-    if (Array.isArray(items)) {
-      _set(
-        _get().filter(
-          (item) => !items.find((removeItem) => compare(item, removeItem))
-        )
+  const remove = (items: ITEM[] | ITEM | string | string[]) => {
+    if (isArray) {
+      _setState(
+        (getState() as ITEM[]).filter(
+          (item) =>
+            !_itemIsInArray(
+              items,
+              [typeof item === "string" ? item : getKey?.(item), item],
+              compare,
+            ),
+        ) as SET,
       );
     } else {
-      _set(_get().filter((item) => !compare(item, items)));
+      const acc: NormalizedType<ITEM> = {};
+      for (const [key, item] of Object.entries(getState())) {
+        if (!_itemIsInArray(items, [key, item], compare)) {
+          acc[key] = item;
+        }
+      }
+      _setState(acc as SET);
     }
   };
 
   const filter = (validate: (item: ITEM) => boolean) => {
-    _set(_get().filter(validate));
+    if (isArray) {
+      _setState((getState() as ITEM[]).filter(validate) as SET);
+    } else {
+      _setState(
+        Object.fromEntries(
+          Object.entries(getState()).filter(([_, item]) => validate(item)),
+        ) as SET,
+      );
+    }
   };
 
   const update = (items: ITEM[] | ITEM) => {
-    if (Array.isArray(items)) {
-      _set(
-        _get().map((existing) => {
-          const item = items.find((item) => compare(existing, item));
-          return item || existing;
-        })
-      );
+    if (isArray) {
+      if (Array.isArray(items)) {
+        _setState(
+          (getState() as ITEM[]).map((existing) => {
+            const item = items.find((item) => compare(existing, item));
+            return item || existing;
+          }) as SET,
+        );
+      } else {
+        _setState(
+          (getState() as ITEM[]).map((existing) =>
+            compare(existing, items) ? items : existing,
+          ) as SET,
+        );
+      }
     } else {
-      _set(
-        _get().map((existing) => (compare(existing, items) ? items : existing))
-      );
+      const updated = _getMap(Array.isArray(items) ? items : [items], getKey);
+      _setState({ ...getState(), ...updated });
     }
   };
 
   const toggle = (item: ITEM) => {
-    const exist = !!_get().find((_item) => compare(item, _item));
+    const exist = isArray
+      ? !!(getState() as ITEM[]).find((_item) => compare(item, _item))
+      : getKey(item) in getState();
 
-    if (exist) {
-      remove(item);
-    } else {
-      add(item);
-    }
+    exist ? remove(item) : add(item);
   };
 
-  return { set: _set, get: _get, clear, toggle, update, filter, remove, add };
+  return {
+    set: _set,
+    get: getState,
+    clear,
+    toggle,
+    update,
+    filter,
+    remove,
+    add,
+  };
+};
+
+export const defaultCompareList = <ITEM>(left: ITEM, right: ITEM): boolean =>
+  left === right;
+
+const _getMap = <ITEM>(
+  items: ITEM[],
+  getKey: (item: ITEM) => string,
+): NormalizedType<ITEM> => {
+  return items.reduce<NormalizedType<ITEM>>((acc, item) => {
+    const key = getKey?.(item) || String(item);
+    acc[key] = item;
+    return acc;
+  }, {});
+};
+
+const _itemIsInArray = <ITEM>(
+  items: ITEM[] | ITEM | string | string[],
+  [key, item]: [key: string, item: ITEM],
+  compare: (left: ITEM, right: ITEM) => boolean,
+) => {
+  if (Array.isArray(items)) {
+    items.some((i) => (typeof i === "string" ? i === key : compare(item, i)));
+  } else {
+    return typeof items !== "string" ? compare(item, items) : items === key;
+  }
 };
