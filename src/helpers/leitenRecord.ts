@@ -20,24 +20,24 @@ export interface ILeitenRecord<VALUE> {
 
 export const leitenRecord = <
   Store extends object,
-  P extends DotNestedKeys<Store>
+  P extends DotNestedKeys<Store>,
 >(
   store: StoreApi<Store>,
   path: P extends string
     ? DotNestedValue<Store, P> extends Array<any>
       ? never
       : DotNestedValue<Store, P> extends object | null
-      ? P
-      : never
+        ? P
+        : never
     : never,
-  effects?: ILeitenRecordEffects<DotNestedValue<Store, P>, Store>
+  effects?: ILeitenRecordEffects<DotNestedValue<Store, P>, Store>,
 ): ILeitenRecord<DotNestedValue<Store, P>> => {
   type VALUE = DotNestedValue<Store, P>;
 
   const initialValue = get(store.getState(), path, "_empty") as VALUE;
   if (initialValue === "_empty" || typeof initialValue !== "object") {
     throw new Error(
-      "[leitenRecord] The defined path does not match the required structure"
+      "[leitenRecord] The defined path does not match the required structure",
     );
   }
 

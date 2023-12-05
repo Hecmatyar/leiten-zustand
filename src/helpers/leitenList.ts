@@ -54,9 +54,9 @@ export const leitenList = <
   path: P extends string
     ? ITEM extends void
       ? P
-      : DotNestedValue<Store, P> extends Record<string, ITEM> | Array<any>
-      ? P
-      : never
+      : DotNestedValue<Store, P> extends Record<string, any> | Array<any>
+        ? P
+        : never
     : never,
   options?: DotNestedValue<Store, P> extends Record<
     string,
@@ -109,8 +109,8 @@ export const leitenList = <
             (getState() as ITEM[]).every((item) => !compare(existing, item)),
           )
         : (getState() as ITEM[]).every((item) => !compare(items, item))
-        ? [items]
-        : [];
+          ? [items]
+          : [];
 
       _setState([...(getState() as ITEM[]), ...values] as SET);
     } else {

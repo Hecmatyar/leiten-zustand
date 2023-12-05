@@ -17,11 +17,11 @@ export type ILeitenPrimitive<VALUE> = {
 
 export const leitenPrimitive = <
   Store extends object,
-  P extends DotNestedKeys<Store>
+  P extends DotNestedKeys<Store>,
 >(
   store: StoreApi<Store>,
   path: P extends string ? P : never,
-  effects?: ILeitenPrimitiveEffects<DotNestedValue<Store, P>, Store>
+  effects?: ILeitenPrimitiveEffects<DotNestedValue<Store, P>, Store>,
 ): ILeitenPrimitive<DotNestedValue<Store, P>> => {
   type VALUE = DotNestedValue<Store, P>;
 

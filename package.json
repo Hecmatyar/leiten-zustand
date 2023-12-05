@@ -1,6 +1,6 @@
 {
   "name": "leiten-zustand",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": false,
   "description": "Zustand state manager controllers",
   "repository": {
@@ -54,16 +54,16 @@
     "extends": []
   },
   "dependencies": {
-    "nanoid": "^5.0.2"
+    "nanoid": "^5.0.4"
   },
   "devDependencies": {
-    "@types/react": "^18.2.31",
-    "@types/lodash-es": "^4.17.10",
-    "@typescript-eslint/eslint-plugin": "^5.59.2",
-    "@typescript-eslint/parser": "^5.59.2",
+    "@types/react": "^18.2.42",
+    "@types/lodash-es": "^4.17.12",
+    "@typescript-eslint/eslint-plugin": "^6.13.2",
+    "@typescript-eslint/parser": "^6.13.2",
     "clean-publish": "^4.2.0",
-    "del-cli": "^5.0.0",
-    "eslint": "^8.52.0",
+    "del-cli": "^5.1.0",
+    "eslint": "^8.55.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-prettier": "^5.0.1",
@@ -72,10 +72,10 @@
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "husky": "^8.0.3",
     "react": "^18.2.0",
-    "lint-staged": "^15.0.2",
-    "prettier": "^3.0.3",
-    "typescript": "^5.2.2",
-    "zustand": "^4.4.4",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.2",
+    "zustand": "^4.4.7",
     "immer": "^10.0.3",
     "lodash-es": "^4.17.21"
   },

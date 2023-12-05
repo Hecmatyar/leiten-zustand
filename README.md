@@ -10,7 +10,7 @@ several parts, this library aims to simplify common data-related tasks without t
 solutions.
 
 To get a better understanding of what this library offers and how it works, you can refer to
-the [live example on CodeSandbox](https://codesandbox.io/p/sandbox/bitter-lake-w57ywe?selection=%5B%7B%22endColumn%22%3A44%2C%22endLineNumber%22%3A49%2C%22startColumn%22%3A44%2C%22startLineNumber%22%3A49%7D%5D&file=%2Fsrc%2Frequest%2FRequest.tsx)
+the [live example on CodeSandbox](https://codesandbox.io/p/devbox/leiten-standard-example)
 . In many cases, the provided controllers will help reduce the complexity of your store, eliminating the need to split
 it into multiple parts.
 
@@ -259,8 +259,7 @@ leitenMap also can be helpful,
 
 leitenGroupRequest works equally well with both a normalized list and a regular array. If you are using an array, make
 sure to specify the **getKey** function, as shown in the example
-below. [Codesandbox link](https://codesandbox.io/p/sandbox/cool-night-0mo1l7?file=%2Fsrc%2Frequest%2FRequest.tsx) with
-arrays
+below. [Codesandbox link](https://codesandbox.io/p/devbox/fcdrs4) with arrays
 
 ```tsx
 interface IStore {
