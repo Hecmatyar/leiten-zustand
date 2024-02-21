@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 
-import { ILoadingStatus } from "../interfaces/IContentLoading";
+import { ILoadingStatus } from "../interfaces/ILoadingStatus";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 interface ISwitcherProps {
   status: ILoadingStatus;
   children: ReactNode;

@@ -3,10 +3,12 @@ import { create } from "zustand";
 import {
   ILeitenGroupRequestParams,
   leitenGroupRequest,
+} from "../controllers/leitenGroupRequest";
+import {
   leitenMap,
-  useLeitenRequests,
-} from "../../helpers";
-import { getCard, ICard } from "../requests";
+  useLeitenRequestStore,
+} from "../stores/useLeitenRequestStore";
+import { getCard, ICard } from "./requests";
 
 interface IState {
   info: { keys: string[] };
@@ -29,7 +31,7 @@ export const useGroupController = leitenGroupRequest(
     fulfilled: ({ result, payload }) => {
       // console.log("everything ok", result.type, payload);
     },
-  }
+  },
 );
 
 const GroupRequest = () => {
@@ -37,9 +39,7 @@ const GroupRequest = () => {
 
   return (
     <>
-      {cards?.map((id) => (
-        <Card id={id} />
-      ))}
+      {cards?.map((id) => <Card id={id} />)}
       <Statuses />
     </>
   );
@@ -79,7 +79,7 @@ const Card = ({ id }: { id: string }) => {
 };
 
 const Statuses = () => {
-  const loading = useLeitenRequests(selector);
+  const loading = useLeitenRequestStore(selector);
 
   return <>Merged statuses for "1" and "2": {loading}</>;
 };
@@ -87,5 +87,6 @@ const Statuses = () => {
 // you can write selector and merge params of request
 export const selector = leitenMap(
   ["1", "2"], //you can receive keys from requestController, example useController.key;
-  ([first, second]) => first.status === "loading" && second.status === "loading"
+  ([first, second]) =>
+    first.status === "loading" && second.status === "loading",
 );

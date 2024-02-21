@@ -3,13 +3,13 @@ import { get, set } from "lodash-es";
 import { StoreApi } from "zustand/esm";
 
 import {
+  AcceptableType,
   ArrayElementType,
   DotNestedKeys,
   DotNestedValue,
   NormalizedType,
   ValueOf,
-} from "../interfaces/dotNestedKeys";
-import { AcceptableGroupRequestType } from "./leitenGroupRequest";
+} from "../interfaces/pathTypes";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -34,18 +34,31 @@ export interface ILeitenNormalizedListOptions<ITEM, State, SET>
   getKey: (item: ITEM) => string;
 }
 
+/**
+ * Represents a list of items stored in a specific path of a store.
+ * @template Store - The type of the store object.
+ * @template P - The type of the path in the store.
+ * @template ITEM - The type of items stored in the list.
+ * @template SET - The type to set the list when updating.
+ * @param {StoreApi<Store>} store - The store object.
+ * @param {P extends string ? (ITEM extends void ? P : (DotNestedValue<Store, P> extends Record<string, any> | Array<any> ? P : never)) : never} path - The path in the store where the
+ * list is stored.
+ * @param {DotNestedValue<Store, P> extends Record<string, AcceptableType<Store>> ? ILeitenNormalizedListOptions<ITEM, Store, SET> : ILeitenListOptions<ITEM, Store, SET>}
+ * [options] - The options to configure the behavior of the list.
+ * @returns {ILeitenList<ITEM> & { get: () => SET }} - The list object with a set of operations and a `get` method to retrieve the current state of the list.
+ */
 export const leitenList = <
   Store extends object,
   P extends DotNestedKeys<Store>,
   ITEM extends DotNestedValue<Store, P> extends Record<
     string,
-    AcceptableGroupRequestType<Store>
+    AcceptableType<Store>
   >
     ? ValueOf<DotNestedValue<Store, P>>
     : ArrayElementType<DotNestedValue<Store, P>>,
   SET extends DotNestedValue<Store, P> extends Record<
     string,
-    AcceptableGroupRequestType<Store>
+    AcceptableType<Store>
   >
     ? NormalizedType<ITEM>
     : ITEM[],
@@ -60,7 +73,7 @@ export const leitenList = <
     : never,
   options?: DotNestedValue<Store, P> extends Record<
     string,
-    AcceptableGroupRequestType<Store>
+    AcceptableType<Store>
   >
     ? ILeitenNormalizedListOptions<ITEM, Store, SET>
     : ILeitenListOptions<ITEM, Store, SET>,

@@ -1,21 +1,22 @@
 import { cloneDeep, get, isEqual } from "lodash-es";
 import { StoreApi, UseBoundStore } from "zustand";
 
-import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
+import { IExtraArgument } from "../interfaces/IExtraArgument";
+import { ILeitenEffects } from "../interfaces/ILeitenEffects";
+import {
+  DotNestedKeys,
+  DotNestedValue,
+  RestrictedStoreApi,
+} from "../interfaces/pathTypes";
 import { ILeitenPrimitive, leitenPrimitive } from "./leitenPrimitive";
+import { ILeitenRecord, leitenRecord } from "./leitenRecord";
 import {
-  ILeitenRecord,
-  ILeitenRecordEffects,
-  leitenRecord,
-} from "./leitenRecord";
-import {
-  IExtraArgument,
   ILeitenRequestOptions,
   leitenRequest,
   resettableStoreSubscription,
 } from "./leitenRequest";
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 type RecordFilter<T> = {
   (initialObject?: T): IObjectDifferent[];
 } & ILeitenRecord<T>;
@@ -23,6 +24,20 @@ type PrimitiveFilter<Y> = {
   (initialObject?: Y): IObjectDifferent[];
 } & ILeitenPrimitive<Y>;
 
+/**
+ * Creates a filter request for the "leiten" library.
+ *
+ * @template Store - The type of the store object.
+ * @template Path - The type of the path argument.
+ * @template Result - The type of the result produced by the request.
+ *
+ * @param {UseBoundStore<StoreApi<Store>>} store - The store to bind the filter request to.
+ * @param {Path} path - The path to be filtered.
+ * @param {(params: void, extraArgument?: IExtraArgument) => Promise<Result>} request - The function that performs the filter request.
+ * @param {ILeitenRequestOptions<void, Result>} options - The options object for the filter request.
+ *
+ * @returns {Object} - An object with methods and properties related to the filter request.
+ */
 export const leitenFilterRequest = <
   Store extends object,
   Path extends DotNestedKeys<Store>,
@@ -33,8 +48,8 @@ export const leitenFilterRequest = <
     ? Result extends void
       ? Path
       : DotNestedValue<Store, Path> extends Result | null
-      ? Path
-      : never
+        ? Path
+        : never
     : never,
   request: (params: void, extraArgument?: IExtraArgument) => Promise<Result>,
   options?: ILeitenRequestOptions<void, Result>,
@@ -54,13 +69,14 @@ export const leitenFilterRequest = <
 
   const createFilter = <Path extends DotNestedKeys<Store>>(
     path: Path extends string ? Path : never,
-    options?: ILeitenRecordEffects<DotNestedValue<Store, Path>, Store>,
+    options?: ILeitenEffects<DotNestedValue<Store, Path>, Store>,
   ): DotNestedValue<Store, Path> extends object
     ? RecordFilter<DotNestedValue<Store, Path>>
     : PrimitiveFilter<DotNestedValue<Store, Path>> => {
-    type Response = DotNestedValue<Store, Path> extends object
-      ? RecordFilter<DotNestedValue<Store, Path>>
-      : PrimitiveFilter<DotNestedValue<Store, Path>>;
+    type Response =
+      DotNestedValue<Store, Path> extends object
+        ? RecordFilter<DotNestedValue<Store, Path>>
+        : PrimitiveFilter<DotNestedValue<Store, Path>>;
     const initial = get(store.getState(), path, undefined);
 
     function hook(
@@ -80,7 +96,10 @@ export const leitenFilterRequest = <
     const record = controller(store, path, {
       sideEffect: (side) => {
         options?.sideEffect?.(side);
-        action(path).then();
+        const filter = get(store.getState(), path);
+        if (isEqual(filter, prevFilters[path])) {
+          leiten.action();
+        }
       },
       patchEffect: options?.patchEffect,
     });
@@ -95,26 +114,35 @@ export const leitenFilterRequest = <
     ExternalStore extends object,
     ExternalPath extends DotNestedKeys<ExternalStore>,
   >(
-    store: UseBoundStore<StoreApi<ExternalStore>>,
+    store: RestrictedStoreApi<ExternalStore>,
     path: ExternalPath extends string ? ExternalPath : never,
     options?: {
       sideEffect?: (value: {
         prev: DotNestedValue<ExternalStore, ExternalPath>;
         next: DotNestedValue<ExternalStore, ExternalPath>;
       }) => void;
+      comparePatch?: (
+        value: DotNestedValue<ExternalStore, ExternalPath>,
+      ) => any;
     },
   ) => {
     const haveSubscription = () =>
       !!Object.values((leiten as any)._usages || {}).filter((item) => item)
         .length;
     return store.subscribe((state, prevState) => {
-      const prevValue = get(prevState, path);
-      const value = get(state, path);
+      const prevValue = options?.comparePatch
+        ? options.comparePatch(get(prevState, path))
+        : get(prevState, path);
+      const value = options?.comparePatch
+        ? options.comparePatch(get(state, path))
+        : get(state, path);
 
       if (haveSubscription() && !isEqual(prevValue, value)) {
-        options?.sideEffect?.({ prev: prevValue, next: value });
-
-        pureAction().then();
+        options?.sideEffect?.({
+          prev: get(prevState, path),
+          next: get(state, path),
+        });
+        pureAction();
       }
     });
   };
@@ -122,14 +150,6 @@ export const leitenFilterRequest = <
   const pureAction = async () => {
     updatePrevFilters();
     leiten.action();
-  };
-
-  const action = async (path: string) => {
-    const filter = get(store.getState(), path);
-
-    if (JSON.stringify(filter) !== JSON.stringify(prevFilters[path])) {
-      leiten.action();
-    }
   };
 
   const updatePrevFilters = () => {

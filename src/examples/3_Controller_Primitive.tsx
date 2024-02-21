@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 
-import { leitenPrimitive } from "../../helpers";
+import { leitenPrimitive } from "../controllers/leitenPrimitive";
 
 interface IState {
   step: number;

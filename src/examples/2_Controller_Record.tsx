@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 
-import { leitenRecord, leitenRequest } from "../../helpers";
-import { getUser, IUser, updateUser } from "../requests";
+import { leitenRecord } from "../controllers/leitenRecord";
+import { leitenRequest } from "../controllers/leitenRequest";
+import { getUser, IUser, updateUser } from "./requests";
 
 interface IState {
   user: IUser | null;
@@ -14,7 +15,7 @@ const useExampleStore = create<IState>(() => ({
 const useGetController = leitenRequest(
   useExampleStore,
   "user",
-  (value: string) => getUser(value)
+  (value: string) => getUser(value),
 );
 const recordController = leitenRecord(useExampleStore, "user", {
   sideEffect: () => {
@@ -28,7 +29,7 @@ const useUpdateController = leitenRequest(
   async (_params: void) => {
     const user = useExampleStore.getState().user;
     user && updateUser(user);
-  }
+  },
 );
 
 const Example = () => {

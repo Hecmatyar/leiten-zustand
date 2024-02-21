@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 
-import { leitenRequest } from "../../helpers";
-import { getUser, IUser } from "../requests";
+import { leitenRequest } from "../controllers/leitenRequest";
+import { getUser, IUser } from "./requests";
 
 interface IState {
   user: IUser | null;
@@ -14,7 +14,7 @@ const useExampleStore = create<IState>(() => ({
 const useGetController = leitenRequest(
   useExampleStore,
   "user",
-  (value: string) => getUser(value)
+  (value: string) => getUser(value),
 );
 
 const Example = () => {

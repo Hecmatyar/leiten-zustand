@@ -3,30 +3,45 @@ import { get, set } from "lodash-es";
 import { StoreApi } from "zustand";
 import { UseBoundStore } from "zustand/esm";
 
+import { IExtraArgument } from "../interfaces/IExtraArgument";
+import { ILeitenEffects } from "../interfaces/ILeitenEffects";
 import {
+  AcceptableType,
   ArrayElementType,
   DotNestedKeys,
   DotNestedValue,
   ValueOf,
-} from "../interfaces/dotNestedKeys";
+} from "../interfaces/pathTypes";
 import { getObjectDifference, IObjectDifferent } from "./leitenFilterRequest";
 import {
-  AcceptableGroupRequestType,
   ILeitenGroupRequestArrayOption,
   ILeitenGroupRequestOption,
   ILeitenGroupRequestParams,
   leitenGroupRequest,
 } from "./leitenGroupRequest";
-import { ILeitenRecordEffects } from "./leitenRecord";
-import { IExtraArgument, resettableStoreSubscription } from "./leitenRequest";
+import { resettableStoreSubscription } from "./leitenRequest";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Represents a function that filters and manages group data based on given parameters.
+ *
+ * @template Store - The type of the application store.
+ * @template P - The type of the path to the group data.
+ * @template Result - The type of the result after filtering the group data.
+ *
+ * @param {UseBoundStore<StoreApi<Store>>} store - The store object.
+ * @param {P} path - The path to the group data in the store.
+ * @param {(params: ILeitenGroupRequestParams<void>, extraArgument?: IExtraArgument) => Promise<Result>} request - The function that handles the group request.
+ * @param {ILeitenGroupRequestOption<void, Result> | ILeitenGroupRequestArrayOption<void, Result>} [options] - The options for the group request.
+ *
+ * @returns {LeitenGroupApi<Result>} - An object with methods to filter and manage group data.
+ */
 export const leitenGroupFilterRequest = <
   Store extends object,
   P extends DotNestedKeys<Store>,
   Result extends DotNestedValue<Store, P> extends Record<
     string,
-    AcceptableGroupRequestType<Store>
+    AcceptableType<Store>
   >
     ? ValueOf<DotNestedValue<Store, P>>
     : ArrayElementType<DotNestedValue<Store, P>>,
@@ -36,8 +51,8 @@ export const leitenGroupFilterRequest = <
     ? Result extends void
       ? P
       : DotNestedValue<Store, P> extends Record<string, Result> | Array<Result>
-      ? P
-      : never
+        ? P
+        : never
     : never,
   request: (
     params: ILeitenGroupRequestParams<void>,
@@ -45,7 +60,7 @@ export const leitenGroupFilterRequest = <
   ) => Promise<Result>,
   options?: DotNestedValue<Store, P> extends Record<
     string,
-    AcceptableGroupRequestType<Store>
+    AcceptableType<Store>
   >
     ? ILeitenGroupRequestOption<void, Result>
     : ILeitenGroupRequestArrayOption<void, Result>,
@@ -57,10 +72,7 @@ export const leitenGroupFilterRequest = <
       updatePrevFilters(key);
       return options?.action?.(args);
     },
-  } as DotNestedValue<Store, P> extends Record<
-    string,
-    AcceptableGroupRequestType<Store>
-  >
+  } as DotNestedValue<Store, P> extends Record<string, AcceptableType<Store>>
     ? ILeitenGroupRequestOption<void, Result>
     : ILeitenGroupRequestArrayOption<void, Result>);
 
@@ -73,10 +85,7 @@ export const leitenGroupFilterRequest = <
         ? Path
         : never
       : never,
-    options: ILeitenRecordEffects<
-      ValueOf<DotNestedValue<Store, Path>>,
-      Store
-    > & {
+    options: ILeitenEffects<ValueOf<DotNestedValue<Store, Path>>, Store> & {
       initialValue: ValueOf<DotNestedValue<Store, Path>>;
     },
   ) => {

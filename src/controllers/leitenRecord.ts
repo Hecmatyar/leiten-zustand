@@ -2,14 +2,10 @@ import { produce } from "immer";
 import { get, set } from "lodash-es";
 import { StoreApi } from "zustand/esm";
 
-import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
+import { ILeitenEffects } from "../interfaces/ILeitenEffects";
+import { DotNestedKeys, DotNestedValue } from "../interfaces/pathTypes";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-export interface ILeitenRecordEffects<VALUE, State> {
-  patchEffect?: (value: VALUE) => Partial<State>;
-  sideEffect?: (value: { prev: VALUE; next: VALUE }) => void;
-}
 
 export interface ILeitenRecord<VALUE> {
   patch: (value: Partial<VALUE>) => void;
@@ -18,6 +14,22 @@ export interface ILeitenRecord<VALUE> {
   clear: () => void;
 }
 
+/**
+ * Creates a Leiten record object that allows managing a specific value within a Store.
+ * @template Store - The type of the store object.
+ * @template P - The type of the path to the value within the store object.
+ * @param {StoreApi<Store>} store - The store object.
+ * @param {P extends string
+ ? DotNestedValue<Store, P> extends Array<any>
+ ? never
+ : DotNestedValue<Store, P> extends object | null
+ ? P
+ : never
+ : never} path - The path to the value within the store object.
+ * @param {ILeitenRecordEffects<DotNestedValue<Store, P>, Store>} [effects] - Optional effects for the Leiten record.
+ * @throws {Error} - Throws an error if the initial value is not an object or "_empty".
+ * @returns {ILeitenRecord<DotNestedValue<Store, P>>} - The created Leiten record object.
+ */
 export const leitenRecord = <
   Store extends object,
   P extends DotNestedKeys<Store>,
@@ -30,7 +42,7 @@ export const leitenRecord = <
         ? P
         : never
     : never,
-  effects?: ILeitenRecordEffects<DotNestedValue<Store, P>, Store>,
+  effects?: ILeitenEffects<DotNestedValue<Store, P>, Store>,
 ): ILeitenRecord<DotNestedValue<Store, P>> => {
   type VALUE = DotNestedValue<Store, P>;
 
@@ -71,3 +83,17 @@ export const leitenRecord = <
 
   return { clear, set: setState, get: getState, patch };
 };
+
+// example
+// const useAuthStore = create(() => ({
+//   // auth: initialContentLoading<IResult, IPayload>(null),
+//   test: { a: [{ a: 12 }, { a: 11 }], b: 12 },
+//   a: {
+//     b: "test",
+//   },
+// }));
+//
+// // const token = useAuthStore.getState().test.a
+//
+// const controller = leitenRecord(useAuthStore, "a");
+// controller.patch({ b: "12" });

@@ -3,11 +3,11 @@ import { get, set } from "lodash-es";
 import { nanoid } from "nanoid";
 import { StoreApi } from "zustand";
 
+import { DotNestedKeys, DotNestedValue } from "../interfaces/pathTypes";
 import {
   leitenModalManagerAction,
   useLeitenModalStack,
-} from "../hooks/useLeitenModals";
-import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
+} from "../stores/useLeitenModals";
 
 type ActionType = "OPEN" | "CLOSE" | "TOGGLE" | "SET_DATA";
 
@@ -23,6 +23,18 @@ export interface ILeitenModal<Data> {
   (): [boolean, boolean];
 }
 
+/**
+ * Creates a Leiten modal instance.
+ *
+ * @template Store - The type of the store object.
+ * @template P - The type of the path parameter.
+ * @param {StoreApi<Store>} store - The store object.
+ * @param {P} path - The path to the data in the store.
+ * @param {Object} [extra] - Extra options for the modal.
+ *   @property {Function} [reaction] - A reaction function to be called when an action is performed.
+ *   @property {boolean} [clearOnClose] - Flag indicating whether to clear the content on close.
+ * @returns {ILeitenModal<DotNestedValue<Store, P>>} The Leiten modal instance.
+ */
 export const leitenModal = <
   Store extends object,
   P extends DotNestedKeys<Store>,

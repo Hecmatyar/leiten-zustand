@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { create } from "zustand/esm";
 
-import { leitenModal, leitenRequest } from "../../helpers";
-import { getUser, IUser } from "../requests";
+import { leitenModal } from "../controllers/leitenModal";
+import { leitenRequest } from "../controllers/leitenRequest";
+import { getUser, IUser } from "./requests";
 
 interface IState {
   modal: { name: string; id: string };
@@ -14,7 +15,7 @@ const useExampleStore = create<IState>(() => ({
   user: null,
 }));
 const useGetController = leitenRequest(useExampleStore, "user", (id: string) =>
-  getUser(id)
+  getUser(id),
 );
 export const useModalController = leitenModal(useExampleStore, "modal");
 

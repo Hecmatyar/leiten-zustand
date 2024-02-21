@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
-import { leitenList } from "../../helpers";
-import { IKeyword } from "../requests";
+import { leitenList } from "../controllers/leitenList";
+import { IKeyword } from "./requests";
 
 interface IState {
   info: {

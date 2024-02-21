@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
-import { leitenFilterRequest } from "../../helpers";
-import { getChart, IChartFilter } from "../requests";
+import { leitenFilterRequest } from "../controllers/leitenFilterRequest";
+import { getChart, IChartFilter } from "./requests";
 
 interface IState {
   chart: number[];

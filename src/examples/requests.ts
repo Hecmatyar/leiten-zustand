@@ -17,7 +17,7 @@ export interface IUser {
 
 export const getUser = async (
   id: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<IUser> => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -60,7 +60,7 @@ export interface IChartFilter {
 
 export const getChart = async (
   filter: IChartFilter,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<number[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {

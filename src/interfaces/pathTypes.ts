@@ -1,3 +1,6 @@
+import { StoreApi } from "zustand";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 type DotPrefix<T extends string> = T extends "" ? "" : `.${T}`;
 
 export type DotNestedKeys<T> = (
@@ -6,9 +9,10 @@ export type DotNestedKeys<T> = (
       ? ""
       :
           | {
-              [K in Exclude<keyof T, symbol>]: `${K}${DotPrefix<
-                DotNestedKeys<T[K]>
-              >}`;
+              [K in Exclude<
+                keyof T,
+                symbol
+              >]: `${K}${DotPrefix<DotNestedKeys<T[K]>>}`;
             }[Exclude<keyof T, symbol>]
           | keyof T
     : ""
@@ -30,3 +34,10 @@ export type ArrayElementType<ArrType> =
   ArrType extends readonly (infer ElementType)[] ? ElementType : never;
 
 export type NormalizedType<ITEM> = Record<string, ITEM>;
+
+export type RestrictedStoreApi<PROPS> = Omit<StoreApi<PROPS>, "setState">;
+
+export type AcceptableType<Store extends object> = void | DotNestedValue<
+  Store,
+  DotNestedKeys<Store>
+> | null;

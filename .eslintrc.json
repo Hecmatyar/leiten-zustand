@@ -22,6 +22,7 @@
     }
   },
   "rules": {
+    "@typescript-eslint/no-namespace": "off",
     "no-console": "error",
     "simple-import-sort/imports": "warn",
     "simple-import-sort/exports": "error",

@@ -12,7 +12,7 @@ export const useLeitenModalStack = create<LeitenModalManagerState>(() => ({
 export const leitenModalManagerAction = (
   key: string,
   value: boolean,
-  replace?: boolean
+  replace?: boolean,
 ) => {
   const nextState = produce(useLeitenModalStack.getState(), (draft) => {
     let queue = draft.queue.filter((modal) => modal !== key);

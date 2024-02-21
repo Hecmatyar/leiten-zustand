@@ -2,12 +2,8 @@ import { produce } from "immer";
 import { get, set } from "lodash-es";
 import { StoreApi } from "zustand";
 
-import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
-
-interface ILeitenPrimitiveEffects<VALUE, State> {
-  patchEffect?: (value: VALUE) => Partial<State>;
-  sideEffect?: (value: { prev: VALUE; next: VALUE }) => void;
-}
+import { ILeitenEffects } from "../interfaces/ILeitenEffects";
+import { DotNestedKeys, DotNestedValue } from "../interfaces/pathTypes";
 
 export type ILeitenPrimitive<VALUE> = {
   set: (value: VALUE) => void;
@@ -15,13 +11,27 @@ export type ILeitenPrimitive<VALUE> = {
   clear: () => void;
 };
 
+/**
+ * A function that creates a primitive value handler for a nested property in a store.
+ *
+ * @template Store - The type of the store object.
+ * @template P - The type of the nested property path.
+ *
+ * @param {StoreApi<Store>} store - The store object.
+ * @param {P extends string ? P : never} path - The nested property path.
+ * @param {ILeitenPrimitiveEffects<DotNestedValue<Store, P>, Store>} [effects] - Optional effects for manipulating the value.
+ *
+ * @throws {Error} The defined path does not exist.
+ *
+ * @returns {ILeitenPrimitive<DotNestedValue<Store, P>>} An object with methods for manipulating the primitive value.
+ */
 export const leitenPrimitive = <
   Store extends object,
   P extends DotNestedKeys<Store>,
 >(
   store: StoreApi<Store>,
   path: P extends string ? P : never,
-  effects?: ILeitenPrimitiveEffects<DotNestedValue<Store, P>, Store>,
+  effects?: ILeitenEffects<DotNestedValue<Store, P>, Store>,
 ): ILeitenPrimitive<DotNestedValue<Store, P>> => {
   type VALUE = DotNestedValue<Store, P>;
 

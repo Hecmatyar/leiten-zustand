@@ -3,10 +3,10 @@ import { create } from "zustand";
 import {
   ILeitenLoading,
   initialLeitenLoading,
-} from "../interfaces/IContentLoading";
+} from "../interfaces/ILeitenLoading";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const useLeitenRequests = create<{
+export const useLeitenRequestStore = create<{
   [key: string]: ILeitenLoading<any, any>;
 }>(() => ({}));
 
@@ -17,12 +17,12 @@ type TupleOfStates<T extends TupleOfKeys> = {
 
 export const leitenMap = <T extends TupleOfKeys, Response>(
   keys: T,
-  selector: (values: TupleOfStates<T>) => Response
+  selector: (values: TupleOfStates<T>) => Response,
 ) => {
   return (state: { [key: string]: ILeitenLoading<any, any> }) =>
     selector(
       keys.map(
-        (key) => state[key] || initialLeitenLoading()
-      ) as TupleOfStates<T>
+        (key) => state[key] || initialLeitenLoading(),
+      ) as TupleOfStates<T>,
     );
 };

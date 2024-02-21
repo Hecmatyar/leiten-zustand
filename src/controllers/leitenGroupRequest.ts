@@ -3,20 +3,21 @@ import { get, set } from "lodash-es";
 import { StoreApi } from "zustand/esm";
 import { useShallow } from "zustand/react/shallow";
 
-import { useLeitenRequests } from "../hooks/useLeitenRequest";
+import { IExtraArgument } from "../interfaces/IExtraArgument";
 import {
+  ILeitenLoading,
+  initialLeitenLoading,
+} from "../interfaces/ILeitenLoading";
+import { ILoadingStatus } from "../interfaces/ILoadingStatus";
+import {
+  AcceptableType,
   ArrayElementType,
   DotNestedKeys,
   DotNestedValue,
   ValueOf,
-} from "../interfaces/dotNestedKeys";
+} from "../interfaces/pathTypes";
+import { useLeitenRequestStore } from "../stores/useLeitenRequestStore";
 import {
-  ILeitenLoading,
-  ILoadingStatus,
-  initialLeitenLoading,
-} from "../interfaces/IContentLoading";
-import {
-  IExtraArgument,
   ILeitenRequest,
   ILeitenRequestOptions,
   leitenRequest,
@@ -24,7 +25,6 @@ import {
 } from "./leitenRequest";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 export interface ILeitenGroupRequestParams<Params> {
   key: string;
   params: Params;
@@ -34,9 +34,6 @@ export interface IGroupCallOptions {
   status?: ILoadingStatus;
   requestId?: string;
 }
-
-export type AcceptableGroupRequestType<Store extends object> =
-  void | DotNestedValue<Store, DotNestedKeys<Store>> | null;
 
 type LeitenState<Payload, Result> = ILeitenLoading<
   ILeitenGroupRequestParams<Payload>,
@@ -75,13 +72,36 @@ export interface ILeitenGroupRequestArrayOption<Payload, Result>
   getKey: (value: Result) => string;
 }
 
+/**
+ * Represents a group request function that can handle multiple requests simultaneously.
+ *
+ * @template Store - The type of the store object.
+ * @template P - The type of the path parameter.
+ * @template Payload - The type of the payload.
+ * @template Result - The type of the result.
+ *
+ * @param {StoreApi<Store>} store - The store object.
+ * @param {P extends string
+ *   ? Result extends void
+ *     ? P
+ *     : DotNestedValue<Store, P> extends Record<string, Result> | Array<any>
+ *       ? P
+ *       : never
+ *   : never} path - The path parameter.
+ * @param {(params: ILeitenGroupRequestParams<Payload>, extraArgument?: IExtraArgument) => Promise<Result>} payloadCreator - The function that creates the payload for the request.
+ * @param {DotNestedValue<Store, P> extends Record<string, AcceptableType<Store>>
+ *   ? ILeitenGroupRequestOption<Payload, Result>
+ *   : ILeitenGroupRequestArrayOption<Payload, Result>} options - The options for the group request.
+ *
+ * @returns {ILeitenGroupRequest<Payload, Result>} - The group request function.
+ */
 export const leitenGroupRequest = <
   Store extends object,
   P extends DotNestedKeys<Store>,
   Payload,
   Result extends DotNestedValue<Store, P> extends Record<
     string,
-    AcceptableGroupRequestType<Store>
+    AcceptableType<Store>
   >
     ? ValueOf<DotNestedValue<Store, P>>
     : ArrayElementType<DotNestedValue<Store, P>>,
@@ -91,8 +111,8 @@ export const leitenGroupRequest = <
     ? Result extends void
       ? P
       : DotNestedValue<Store, P> extends Record<string, Result> | Array<any>
-      ? P
-      : never
+        ? P
+        : never
     : never,
   payloadCreator: (
     params: ILeitenGroupRequestParams<Payload>,
@@ -100,7 +120,7 @@ export const leitenGroupRequest = <
   ) => Promise<Result>,
   options?: DotNestedValue<Store, P> extends Record<
     string,
-    AcceptableGroupRequestType<Store>
+    AcceptableType<Store>
   >
     ? ILeitenGroupRequestOption<Payload, Result>
     : ILeitenGroupRequestArrayOption<Payload, Result>,
@@ -200,7 +220,7 @@ export const leitenGroupRequest = <
   };
 
   const useRequest: UseRequestType<Payload, Result> = (key, selector) => {
-    return useLeitenRequests((state) => {
+    return useLeitenRequestStore((state) => {
       const id = requests[key]?.key;
       return (selector || nonTypedReturn)(
         (id && state[id]) || initialRequestState,
@@ -209,18 +229,16 @@ export const leitenGroupRequest = <
   };
 
   const useGroupRequest: UseGroupRequestType<Payload, Result> = (selector) => {
-    return useLeitenRequests(
+    return useLeitenRequestStore(
       useShallow((state: Record<string, LeitenState<Payload, Result>>) => {
         const keys = Object.entries(requests).map(([id, value]) => ({
           id,
           key: value.key,
         }));
-        const requestsStore: typeof state = keys.reduce(
-          (acc, { id, key }) => {
-            return Object.assign(acc, { [id]: state[key] });
-          },
-          {} as typeof state,
-        );
+        const requestsStore = {} as typeof state;
+        keys.forEach(({ id, key }) => {
+          requestsStore[id] = state[key];
+        });
 
         return (selector || nonTypedReturn)(requestsStore);
       }),

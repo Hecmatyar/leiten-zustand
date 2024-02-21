@@ -4,19 +4,17 @@ import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { StoreApi } from "zustand";
 
-import { useLeitenRequests } from "../hooks/useLeitenRequest";
-import { DotNestedKeys, DotNestedValue } from "../interfaces/dotNestedKeys";
+import { createAsyncActions } from "../helpers/createAsyncAction";
+import { IExtraArgument } from "../interfaces/IExtraArgument";
 import {
   ILeitenLoading,
-  ILoadingStatus,
   initialLeitenLoading,
-} from "../interfaces/IContentLoading";
+} from "../interfaces/ILeitenLoading";
+import { ILoadingStatus } from "../interfaces/ILoadingStatus";
+import { DotNestedKeys, DotNestedValue } from "../interfaces/pathTypes";
+import { useLeitenRequestStore } from "../stores/useLeitenRequestStore";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-export type UseRequestType<Payload, Result> = <
-  U = ILeitenLoading<Payload, Result>,
->(
+type UseRequestType<Payload, Result> = <U = ILeitenLoading<Payload, Result>>(
   selector?: (state: ILeitenLoading<Payload, Result>) => U,
 ) => U;
 
@@ -33,7 +31,7 @@ export interface ILeitenRequest<Payload, Result>
   get: () => ILeitenLoading<Payload, Result>;
 }
 
-export interface ILeitenRequestCallback<Payload, Result> {
+export interface IRequestCallback<Payload, Result> {
   previousResult: Result;
   result: Result;
   payload: Payload;
@@ -43,24 +41,45 @@ export interface ILeitenRequestCallback<Payload, Result> {
 
 export interface ILeitenRequestOptions<Payload, Result> {
   fulfilled?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "error">,
+    options: Omit<IRequestCallback<Payload, Result>, "error" | "fetchError">,
   ) => void;
   rejected?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "result">,
+    options: Omit<IRequestCallback<Payload, Result>, "result">,
   ) => void;
   abort?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "error" | "result">,
+    options: Omit<
+      IRequestCallback<Payload, Result>,
+      "error" | "fetchError" | "result"
+    >,
   ) => void;
   resolved?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "result" | "error">,
+    options: Omit<
+      IRequestCallback<Payload, Result>,
+      "result" | "error" | "fetchError"
+    >,
   ) => void;
   action?: (
-    options: Omit<ILeitenRequestCallback<Payload, Result>, "error" | "result">,
+    options: Omit<
+      IRequestCallback<Payload, Result>,
+      "error" | "fetchError" | "result"
+    >,
   ) => void;
   initialStatus?: ILoadingStatus;
   optimisticUpdate?: (params: Payload) => Result;
 }
 
+/**
+ * Represents a Leiten Request.
+ * @template Store - The type of the store object.
+ * @template P - The type of the path.
+ * @template Payload - The type of the payload.
+ * @template Result - The type of the result.
+ * @param {StoreApi<Store>} store - The store object.
+ * @param {P} path - The path.
+ * @param {(params: Payload, extraArgument?: IExtraArgument) => Promise<Result>} payloadCreator - The payload creator function.
+ * @param {ILeitenRequestOptions<Payload, Result>} [options] - The options for the request.
+ * @returns {ILeitenRequest<Payload, Result>} - The Leiten Request object.
+ */
 export const leitenRequest = <
   Store extends object,
   P extends DotNestedKeys<Store>,
@@ -72,8 +91,8 @@ export const leitenRequest = <
     ? Result extends void
       ? P
       : DotNestedValue<Store, P> extends Result | null
-      ? P
-      : never
+        ? P
+        : never
     : never,
   payloadCreator: (
     params: Payload,
@@ -88,7 +107,7 @@ export const leitenRequest = <
   const initialContent = get(store.getState(), path, null) as Result;
 
   const setState = (state: ILeitenLoading<Payload, Result>) => {
-    useLeitenRequests.setState({ [key]: state });
+    useLeitenRequestStore.setState({ [key]: state });
   };
   setState(initialState); //init request
 
@@ -100,7 +119,7 @@ export const leitenRequest = <
   };
 
   const getState = (): ILeitenLoading<Payload, Result> => {
-    return useLeitenRequests.getState()[key] || initialState;
+    return useLeitenRequestStore.getState()[key] || initialState;
   };
 
   const getContent = (): Result => {
@@ -132,7 +151,7 @@ export const leitenRequest = <
       setState({
         status: status ?? "loading",
         payload,
-        error: undefined,
+        error: null,
         requestId: requestId,
       });
       options?.action?.({
@@ -173,10 +192,13 @@ export const leitenRequest = <
       }
     },
     abort: (payload: Payload, requestId: string) => {
-      setState(initialState);
-      options?.abort?.({ previousResult, requestId, payload });
-      if (options?.optimisticUpdate) {
-        setContent(previousResult);
+      const state = getState();
+      if (state.requestId === requestId) {
+        setState(initialState);
+        options?.abort?.({ previousResult, requestId, payload });
+        if (options?.optimisticUpdate) {
+          setContent(previousResult);
+        }
       }
     },
     resolved: (payload: Payload, requestId: string) => {
@@ -185,10 +207,6 @@ export const leitenRequest = <
   };
 
   const { action, abort } = createAsyncActions(payloadCreator, reactions);
-
-  const _abort = () => {
-    abort();
-  };
 
   const clear = () => {
     setState(initialState);
@@ -207,7 +225,7 @@ export const leitenRequest = <
       };
     }, []);
 
-    return useLeitenRequests((state) =>
+    return useLeitenRequestStore((state) =>
       (selector || nonTypedReturn)(state[key] || initialState),
     );
   };
@@ -215,11 +233,11 @@ export const leitenRequest = <
   resettableStoreSubscription(store, () => setState(initialState));
 
   const _get = () => {
-    return useLeitenRequests.getState()[key];
+    return useLeitenRequestStore.getState()[key];
   };
 
   return Object.assign(useRequest, {
-    abort: _abort,
+    abort,
     action,
     clear,
     set: _set,
@@ -232,78 +250,63 @@ export const leitenRequest = <
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nonTypedReturn = (value: any) => value;
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const resettableStoreSubscription = (
   store: StoreApi<object>,
   callback: () => void,
 ) => {
   setTimeout(() => {
-    const resettable =
+    const hasResettable =
       (store.getState() as any)["_resettableLifeCycle"] !== undefined;
-    if (resettable) {
-      store.subscribe((next, prev) => {
-        if (
-          (next as any)["_resettableLifeCycle"] === false &&
-          (prev as any)["_resettableLifeCycle"] === true
-        )
+    if (hasResettable) {
+      store.subscribe((next: any, prev: any) => {
+        if (next["_resettableLifeCycle"] !== prev["_resettableLifeCycle"])
           callback();
       });
     }
   }, 0);
 };
 
-function createAsyncActions<Payload, Result>(
-  payloadCreator: (
-    params: Payload,
-    extraArgument?: IExtraArgument,
-  ) => Promise<Result>,
-  extra?: IReaction<Payload, Result>,
-) {
-  let controller = new AbortController();
-  let signal = controller.signal;
+// example
+// type IResult = { token: string } | null;
+// type IPayload = string;
+// export const useAuthStore = create(() => ({
+//   auth: null as IResult,
+//   test: { a: [{ a: 12 }, { a: 11 }], b: 12, c: { token: "string" } },
+//   a: {
+//     b: "test",
+//   },
+//   nullable: null,
+//   value: {
+//     available: [] as IResult[],
+//   },
+// }));
+//
+// const request = async (_params: IPayload): Promise<IResult> => {
+//   return new Promise((resolve) => {
+//     setTimeout(() => {
+//       resolve({ token: "12" });
+//     }, 2000);
+//   });
+// };
 
-  const abort = () => {
-    controller.abort();
-    controller = new AbortController();
-    signal = controller.signal;
-  };
+// const token = useAuthStore.getState().auth?.token;
 
-  const action = (
-    params: Payload,
-    options?: { status?: ILoadingStatus; requestId?: string },
-  ) => {
-    const requestId = options?.requestId || nanoid();
-    extra?.action?.(params, options?.status, requestId);
-    payloadCreator(params, { signal })
-      .then((result) => {
-        extra?.fulfilled?.(result, params, requestId);
-      })
-      .catch((error) => {
-        if (error.message === "The user aborted a request.") {
-          extra?.abort?.(params, requestId);
-        } else {
-          extra?.rejected?.(params, error, requestId);
-        }
-      })
-      .finally(() => {
-        extra?.resolved?.(params, requestId);
-      });
-  };
-  return { action, abort };
-}
+// export const useAuthController = leitenRequest(useAuthStore, "test.c", request);
+// export const useAuthController1 = leitenRequest(useAuthStore, "auth", request, {
+//   optimisticUpdate: (token) => {
+//     return { token };
+//   },
+// });
+//
+// export const useAController = leitenRequest(useAuthStore, "value.available", async (_: void) => {
+//   return false;
+// });
+//
+// useAController.set(true);
 
-interface IReaction<Payload, Result> {
-  fulfilled?: (result: Result, params: Payload, requestId: string) => void;
-  rejected?: (params: Payload, error: string, requestId?: string) => void;
-  abort?: (params: Payload, requestId: string) => void;
-  resolved?: (params: Payload, requestId: string) => void;
-  action?: (
-    params: Payload,
-    status?: ILoadingStatus,
-    requestId?: string,
-  ) => void;
-}
-
-export type IExtraArgument = {
-  signal: AbortSignal;
-  // requestId: string
-};
+// const s = useAuthStore.getState();
+// const a: DotNestedValue<typeof s, "value.available"> = false;
+// console.log(a);
+// const test = useAuthController((state) => state.status);
+// console.log(test);
