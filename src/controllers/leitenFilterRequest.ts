@@ -97,7 +97,7 @@ export const leitenFilterRequest = <
       sideEffect: (side) => {
         options?.sideEffect?.(side);
         const filter = get(store.getState(), path);
-        if (isEqual(filter, prevFilters[path])) {
+        if (!isEqual(filter, prevFilters[path])) {
           leiten.action();
         }
       },

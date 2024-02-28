@@ -238,7 +238,9 @@ const _itemIsInArray = <ITEM>(
   compare: (left: ITEM, right: ITEM) => boolean,
 ) => {
   if (Array.isArray(items)) {
-    items.some((i) => (typeof i === "string" ? i === key : compare(item, i)));
+    return items.some((i) =>
+      typeof i === "string" ? i === key : compare(item, i),
+    );
   } else {
     return typeof items !== "string" ? compare(item, items) : items === key;
   }
