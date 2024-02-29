@@ -300,7 +300,8 @@ const requests = useGroupController((state) => state); // Record with all reques
 The features developed via zustand is not modular enough and may have numerous dependencies (import of different zustand
 stores) that developers may not be aware of. This causes significant problems and confusion when multiple people work on
 the project's codebase. To provide developers with a way to create independent features and an efficient method for
-identifying modularity issues, the **LeitenFeature** has been developed.
+identifying modularity issues, the _leitenFeature_ has been developed. _leitenFeature_ is the **Context** and
+automatically **Resettable**.
 
 Example of a simple feature:
 
