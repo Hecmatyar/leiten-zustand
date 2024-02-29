@@ -500,25 +500,29 @@ For using the static part of leitenFeature you should pass two functions into _l
 
 ```tsx
 const [useUnit, UnitProvider, useStatic] = leitenFeature(
-  ({ mount }) => { // static creator
+  ({ mount }) => { // mount call once when the first instance of the feature was created
     const useCommonStore = create<{ common: string }>(() => ({ common: "" }));
-    const action = () => { /* code */
+    const action = () => {
+      /* code */
     };
     return { useCommonStore, action };
   },
-  ({ useProps }: IFeatureCreator<IProps>, { useCommonStore }) => {
+  ({ useProps }: IFeatureCreator<IProps>, { useCommonStore }) => { // second prop is the return value from static creator
     const useComments = create<IState>(() => ({ comments: [] }));
     const request = leitenFilterRequest(useComments, "comments", async (_: void) => {
       return [{ id: "1", text: "Hello", author: "" }];
     });
-    const action = () => { /* code */
+    const action = () => {
+      /* code */
     };
     return { useComments, action, useProps, request };
   },
 );
 ```
 
-Now you are able to use the static object of your leitenFeature.
+Now you are able to use the static object of your leitenFeature. You can use static code out of Provider of your
+feature. This is the same as regular global stores in zustand, but now you know which feature they belong to and you
+won’t be mistaken when using them.
 
 ```tsx
 const { action, useCommonStore } = useStatic();
