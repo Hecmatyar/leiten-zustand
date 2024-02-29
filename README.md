@@ -72,7 +72,7 @@ const useStore = create<IStore>(() => ({
   data: { user: null, cards: [] },
 }));
 
-// loadData & loadingData
+// loadingData
 const useRequest = leitenRequest(useStore, "data", async (id: string) => getData(id));
 // includes update User method
 const userController = leitenRecord(useStore, "data.user");
