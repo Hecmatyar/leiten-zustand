@@ -41,28 +41,19 @@ export interface IRequestCallback<Payload, Result> {
 
 export interface ILeitenRequestOptions<Payload, Result> {
   fulfilled?: (
-    options: Omit<IRequestCallback<Payload, Result>, "error" | "fetchError">,
+    options: Omit<IRequestCallback<Payload, Result>, "error">,
   ) => void;
   rejected?: (
     options: Omit<IRequestCallback<Payload, Result>, "result">,
   ) => void;
   abort?: (
-    options: Omit<
-      IRequestCallback<Payload, Result>,
-      "error" | "fetchError" | "result"
-    >,
+    options: Omit<IRequestCallback<Payload, Result>, "error" | "result">,
   ) => void;
   resolved?: (
-    options: Omit<
-      IRequestCallback<Payload, Result>,
-      "result" | "error" | "fetchError"
-    >,
+    options: Omit<IRequestCallback<Payload, Result>, "result" | "error">,
   ) => void;
   action?: (
-    options: Omit<
-      IRequestCallback<Payload, Result>,
-      "error" | "fetchError" | "result"
-    >,
+    options: Omit<IRequestCallback<Payload, Result>, "error" | "result">,
   ) => void;
   initialStatus?: ILoadingStatus;
   optimisticUpdate?: (params: Payload) => Result;
@@ -109,7 +100,8 @@ export const leitenRequest = <
   const setState = (state: ILeitenLoading<Payload, Result>) => {
     useLeitenRequestStore.setState({ [key]: state });
   };
-  setState(initialState); //init request
+  //Mutate the useLeitenRequestStore to add the initial state without notify subscribers
+  useLeitenRequestStore.getState()[key] = initialState;
 
   const setContent = (content: Result) => {
     const nextState = produce(store.getState(), (draft) => {
@@ -232,17 +224,13 @@ export const leitenRequest = <
 
   resettableStoreSubscription(store, () => setState(initialState));
 
-  const _get = () => {
-    return useLeitenRequestStore.getState()[key];
-  };
-
   return Object.assign(useRequest, {
     abort,
     action,
     clear,
     set: _set,
     key,
-    get: _get,
+    get: getState,
     _usages: usages,
   });
 };

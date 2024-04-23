@@ -6,6 +6,7 @@ import { StoreApi } from "zustand";
 import { DotNestedKeys, DotNestedValue } from "../interfaces/pathTypes";
 import {
   leitenModalManagerAction,
+  LeitenModalManagerState,
   useLeitenModalStack,
 } from "../stores/useLeitenModals";
 
@@ -14,13 +15,11 @@ type ActionType = "OPEN" | "CLOSE" | "TOGGLE" | "SET_DATA";
 export interface ILeitenModal<Data> {
   open: (data?: Data, replace?: boolean) => void;
   close: () => void;
-  action: (params: {
-    type: ActionType;
-    payload?: Data;
-    replace?: boolean;
-  }) => void;
+  action: (params: { type: ActionType; payload?: Data; replace?: boolean }) => void;
+  get: () => [open: boolean, hidden: boolean];
+  key: string;
 
-  (): [boolean, boolean];
+  (): [open: boolean, hidden: boolean];
 }
 
 /**
@@ -35,17 +34,11 @@ export interface ILeitenModal<Data> {
  *   @property {boolean} [clearOnClose] - Flag indicating whether to clear the content on close.
  * @returns {ILeitenModal<DotNestedValue<Store, P>>} The Leiten modal instance.
  */
-export const leitenModal = <
-  Store extends object,
-  P extends DotNestedKeys<Store>,
->(
+export const leitenModal = <Store extends object, P extends DotNestedKeys<Store>>(
   store: StoreApi<Store>,
   path: P extends string ? P : never,
   extra?: {
-    reaction?: (params: {
-      type: ActionType;
-      payload?: DotNestedValue<Store, P>;
-    }) => void;
+    reaction?: (params: { type: ActionType; payload?: DotNestedValue<Store, P> }) => void;
     clearOnClose?: boolean;
   },
 ): ILeitenModal<DotNestedValue<Store, P>> => {
@@ -69,11 +62,7 @@ export const leitenModal = <
     leitenModalManagerAction(key, value, replace);
   };
 
-  const action = (params: {
-    type: ActionType;
-    payload?: Data;
-    replace?: boolean;
-  }) => {
+  const action = (params: { type: ActionType; payload?: Data; replace?: boolean }) => {
     if (params.type === "CLOSE") {
       setState(false);
       if (extra?.clearOnClose) {
@@ -83,7 +72,7 @@ export const leitenModal = <
       setState(true, params.replace);
       params.payload && setContent(params.payload);
     } else if (params.type === "TOGGLE") {
-      const isOpen = () => useLeitenModalStack.getState().queue.includes(key);
+      const isOpen = () => getState()[0];
 
       setState(!isOpen());
       if (!isOpen() && extra?.clearOnClose) {
@@ -101,13 +90,16 @@ export const leitenModal = <
 
   const close = () => action({ type: "CLOSE" });
 
+  const selector = (state: LeitenModalManagerState) => {
+    const open = state.queue.includes(key);
+    const hidden = open && state.queue[state.queue.length - 1] !== key;
+    return [open, hidden] as [boolean, boolean];
+  };
+  const getState = () => selector(useLeitenModalStack.getState());
+
   const useOpen = () => {
-    return useLeitenModalStack((state) => {
-      const open = state.queue.includes(key);
-      const hidden = open && state.queue[state.queue.length - 1] !== key;
-      return [open, hidden] as [boolean, boolean];
-    });
+    return useLeitenModalStack(selector);
   };
 
-  return Object.assign(useOpen, { action, close, open });
+  return Object.assign(useOpen, { action, close, open, get: getState, key });
 };

@@ -30,10 +30,7 @@ export interface ILeitenRecord<VALUE> {
  * @throws {Error} - Throws an error if the initial value is not an object or "_empty".
  * @returns {ILeitenRecord<DotNestedValue<Store, P>>} - The created Leiten record object.
  */
-export const leitenRecord = <
-  Store extends object,
-  P extends DotNestedKeys<Store>,
->(
+export const leitenRecord = <Store extends object, P extends DotNestedKeys<Store>>(
   store: StoreApi<Store>,
   path: P extends string
     ? DotNestedValue<Store, P> extends Array<any>
@@ -48,9 +45,7 @@ export const leitenRecord = <
 
   const initialValue = get(store.getState(), path, "_empty") as VALUE;
   if (initialValue === "_empty" || typeof initialValue !== "object") {
-    throw new Error(
-      "[leitenRecord] The defined path does not match the required structure",
-    );
+    throw new Error("[leitenRecord] The defined path does not match the required structure");
   }
 
   const getState = (): VALUE => {
