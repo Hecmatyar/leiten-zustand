@@ -36,7 +36,7 @@ export interface IRequestCallback<Payload, Result> {
   result: Result;
   payload: Payload;
   requestId: string;
-  error?: string;
+  error?: any;
 }
 
 export interface ILeitenRequestOptions<Payload, Result> {
