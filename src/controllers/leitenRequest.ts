@@ -31,20 +31,20 @@ export interface ILeitenRequest<Payload, Result>
   get: () => ILeitenLoading<Payload, Result>;
 }
 
-export interface IRequestCallback<Payload, Result> {
+export interface IRequestCallback<Payload, Result, Error = any> {
   previousResult: Result;
   result: Result;
   payload: Payload;
   requestId: string;
-  error?: any;
+  error?: Error;
 }
 
 export interface ILeitenRequestOptions<Payload, Result> {
   fulfilled?: (
     options: Omit<IRequestCallback<Payload, Result>, "error">,
   ) => void;
-  rejected?: (
-    options: Omit<IRequestCallback<Payload, Result>, "result">,
+  rejected?: <Error = any>(
+    options: Omit<IRequestCallback<Payload, Result, Error>, "result">,
   ) => void;
   abort?: (
     options: Omit<IRequestCallback<Payload, Result>, "error" | "result">,
