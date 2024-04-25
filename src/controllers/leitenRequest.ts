@@ -31,20 +31,20 @@ export interface ILeitenRequest<Payload, Result>
   get: () => ILeitenLoading<Payload, Result>;
 }
 
-export interface IRequestCallback<Payload, Result, Error = any> {
+export interface IRequestCallback<Payload, Result> {
   previousResult: Result;
   result: Result;
   payload: Payload;
   requestId: string;
-  error?: Error;
+  error?: any;
 }
 
 export interface ILeitenRequestOptions<Payload, Result> {
   fulfilled?: (
     options: Omit<IRequestCallback<Payload, Result>, "error">,
   ) => void;
-  rejected?: <Error = any>(
-    options: Omit<IRequestCallback<Payload, Result, Error>, "result">,
+  rejected?: (
+    options: Omit<IRequestCallback<Payload, Result>, "result">,
   ) => void;
   abort?: (
     options: Omit<IRequestCallback<Payload, Result>, "error" | "result">,
@@ -170,7 +170,7 @@ export const leitenRequest = <
         options?.fulfilled?.({ previousResult, requestId, payload, result });
       }
     },
-    rejected: (payload: Payload, error: string, requestId?: string) => {
+    rejected: (payload: Payload, error: any, requestId?: string) => {
       const state = getState();
       setState({ ...state, status: "error", error });
       options?.rejected?.({
