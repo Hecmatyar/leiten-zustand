@@ -3,6 +3,7 @@ import {
   createContext,
   FC,
   PropsWithChildren,
+  Provider,
   useContext,
   useEffect,
   useState,
@@ -31,7 +32,9 @@ export interface IFeatureCreator<DEPS> extends IMount {
 
 type Return<FEATURE, DEPS> = [
   (() => FEATURE) & {
-    create: (useProps: IFeatureCreator<DEPS>["useProps"]) => FEATURE;
+    create: (
+      useProps: IFeatureCreator<DEPS>["useProps"],
+    ) => FEATURE & InnerAction;
   },
   FC<
     PropsWithChildren<
@@ -42,7 +45,7 @@ type Return<FEATURE, DEPS> = [
           }
     >
   > & {
-    Unit: FC<PropsWithChildren<{ value: FEATURE }>>;
+    Unit: Provider<FEATURE | null>;
   },
 ];
 
@@ -63,7 +66,17 @@ const createSingleton = <SINGLETON,>(creator: (arg: IMount) => SINGLETON) => {
   };
   const unmountList: ReturnType<EffectCallback>[] = [];
 
+  const getSingleton = () => {
+    if (!lazySingletonRef.current) {
+      lazySingletonRef.current = creator({ mount });
+      return lazySingletonRef.current;
+    } else {
+      return lazySingletonRef.current;
+    }
+  };
+
   const _init = () => {
+    getSingleton();
     if (mountedRef.current === 0) {
       mountList.forEach((m) => {
         unmountList.push(m());
@@ -81,15 +94,6 @@ const createSingleton = <SINGLETON,>(creator: (arg: IMount) => SINGLETON) => {
         }
       });
     };
-  };
-
-  const getSingleton = () => {
-    if (!lazySingletonRef.current) {
-      lazySingletonRef.current = creator({ mount });
-      return lazySingletonRef.current;
-    } else {
-      return lazySingletonRef.current;
-    }
   };
 
   return { getSingleton, _init };
@@ -140,18 +144,6 @@ export function leitenFeature<FEATURE extends object, DEPS, STATIC>(
     return store;
   };
 
-  const UnitProvider = ({
-    children,
-    value,
-  }: PropsWithChildren<{
-    value: FEATURE & InnerAction;
-  }>) => {
-    useEffect(value._init, []);
-    return (
-      <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
-    );
-  };
-
   const _creator = (
     useProps: IFeatureCreator<DEPS>["useProps"],
   ): FEATURE & InnerAction => {
@@ -196,7 +188,9 @@ export function leitenFeature<FEATURE extends object, DEPS, STATIC>(
     );
   };
 
-  const Provider = Object.assign(StoreProvider, { Unit: UnitProvider });
+  const Provider = Object.assign(StoreProvider, {
+    Unit: StoreContext.Provider,
+  });
 
   const useHook = Object.assign(useFeature, { create: _creator });
 

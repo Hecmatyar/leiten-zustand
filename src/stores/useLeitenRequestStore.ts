@@ -26,3 +26,13 @@ export const leitenMap = <T extends TupleOfKeys, Response>(
       ) as TupleOfStates<T>,
     );
 };
+
+// export const selector = leitenMap(
+//   ["1", "2"],
+//   ([state1, state2]) => ({loading: state1.status === "loading" && state2.status === "loading", status: state2.status}),
+// );
+// const { loading, status } = useLeitenRequests(selector);
+
+// const a = () => {
+//   const status = useLeitenRequest(selector);
+//   const status = userController.useRequest(state => state.status);

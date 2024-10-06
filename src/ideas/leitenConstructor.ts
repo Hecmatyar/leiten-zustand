@@ -23,12 +23,23 @@ interface ILeitenConstructorActions<Target> {
  * @returns {Function} - The constructor function.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const leitenConstructor = <Value, Signature extends any[], Methods extends Record<any, any>>(
-  signature: (value: Signature, actions: ILeitenConstructorActions<Value>) => Methods,
+export const leitenConstructor = <
+  Value,
+  Signature extends any[],
+  Methods extends Record<any, any>,
+>(
+  signature: (
+    value: Signature,
+    actions: ILeitenConstructorActions<Value>,
+  ) => Methods,
 ) => {
   return <Store extends object, P extends DotNestedKeys<Store>>(
     store: StoreApi<Store>,
-    path: P extends string ? (DotNestedValue<Store, P> extends Value ? P : never) : never,
+    path: P extends string
+      ? DotNestedValue<Store, P> extends Value
+        ? P
+        : never
+      : never,
     ...rest: Signature
   ) => {
     const initialValue = get(store.getState(), path, "_empty") as Value;
@@ -50,7 +61,13 @@ export const leitenConstructor = <Value, Signature extends any[], Methods extend
 
     const _hook = () => null;
 
-    return signature(rest, { initialValue, get: _get, set: _set, _hook, store });
+    return signature(rest, {
+      initialValue,
+      get: _get,
+      set: _set,
+      _hook,
+      store,
+    });
   };
 };
 

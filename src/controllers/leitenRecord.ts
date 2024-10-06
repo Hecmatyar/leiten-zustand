@@ -30,7 +30,10 @@ export interface ILeitenRecord<VALUE> {
  * @throws {Error} - Throws an error if the initial value is not an object or "_empty".
  * @returns {ILeitenRecord<DotNestedValue<Store, P>>} - The created Leiten record object.
  */
-export const leitenRecord = <Store extends object, P extends DotNestedKeys<Store>>(
+export const leitenRecord = <
+  Store extends object,
+  P extends DotNestedKeys<Store>,
+>(
   store: StoreApi<Store>,
   path: P extends string
     ? DotNestedValue<Store, P> extends Array<any>
@@ -45,7 +48,9 @@ export const leitenRecord = <Store extends object, P extends DotNestedKeys<Store
 
   const initialValue = get(store.getState(), path, "_empty") as VALUE;
   if (initialValue === "_empty" || typeof initialValue !== "object") {
-    throw new Error("[leitenRecord] The defined path does not match the required structure");
+    throw new Error(
+      "[leitenRecord] The defined path does not match the required structure",
+    );
   }
 
   const getState = (): VALUE => {
@@ -78,17 +83,3 @@ export const leitenRecord = <Store extends object, P extends DotNestedKeys<Store
 
   return { clear, set: setState, get: getState, patch };
 };
-
-// example
-// const useAuthStore = create(() => ({
-//   // auth: initialContentLoading<IResult, IPayload>(null),
-//   test: { a: [{ a: 12 }, { a: 11 }], b: 12 },
-//   a: {
-//     b: "test",
-//   },
-// }));
-//
-// // const token = useAuthStore.getState().test.a
-//
-// const controller = leitenRecord(useAuthStore, "a");
-// controller.patch({ b: "12" });

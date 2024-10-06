@@ -8,6 +8,7 @@ import {
   ILeitenLoading,
   initialLeitenLoading,
 } from "../interfaces/ILeitenLoading";
+import { ILeitenRequestOptions } from "../interfaces/ILeitenRequestOptions";
 import { ILoadingStatus } from "../interfaces/ILoadingStatus";
 import {
   AcceptableType,
@@ -19,7 +20,6 @@ import {
 import { useLeitenRequestStore } from "../stores/useLeitenRequestStore";
 import {
   ILeitenRequest,
-  ILeitenRequestOptions,
   leitenRequest,
   resettableStoreSubscription,
 } from "./leitenRequest";

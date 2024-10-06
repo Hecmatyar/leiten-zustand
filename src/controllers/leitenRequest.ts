@@ -1,26 +1,33 @@
-import { produce } from "immer";
-import { get, isEqual, set } from "lodash-es";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { StoreApi } from "zustand";
 
 import { createAsyncActions } from "../helpers/createAsyncAction";
 import { IExtraArgument } from "../interfaces/IExtraArgument";
-import {
-  ILeitenLoading,
-  initialLeitenLoading,
-} from "../interfaces/ILeitenLoading";
+import { ILeitenLoading } from "../interfaces/ILeitenLoading";
+import { ILeitenRequestOptions } from "../interfaces/ILeitenRequestOptions";
 import { ILoadingStatus } from "../interfaces/ILoadingStatus";
 import { DotNestedKeys, DotNestedValue } from "../interfaces/pathTypes";
 import { useLeitenRequestStore } from "../stores/useLeitenRequestStore";
+import { cacheResolver, getQueryHelpers } from "./query/getQueryHelpers";
 
 type UseRequestType<Payload, Result> = <U = ILeitenLoading<Payload, Result>>(
   selector?: (state: ILeitenLoading<Payload, Result>) => U,
 ) => U;
 
-export interface ILeitenRequest<Payload, Result>
-  extends UseRequestType<Payload, Result> {
-  abort: () => void;
+type QueryPath<
+  Store extends object,
+  P extends DotNestedKeys<Store>,
+  Result extends DotNestedValue<Store, P> | null | void,
+> = P extends string
+  ? Result extends void
+    ? P
+    : DotNestedValue<Store, P> extends Result | null
+      ? P
+      : never
+  : never;
+
+export type ILeitenRequest<Payload, Result> = {
   clear: () => void;
   action: (
     params: Payload,
@@ -29,35 +36,9 @@ export interface ILeitenRequest<Payload, Result>
   set: (value: Partial<Result> | void, rewrite?: boolean) => void;
   key: string;
   get: () => ILeitenLoading<Payload, Result>;
-}
-
-export interface IRequestCallback<Payload, Result> {
-  previousResult: Result;
-  result: Result;
-  payload: Payload;
-  requestId: string;
-  error?: any;
-}
-
-export interface ILeitenRequestOptions<Payload, Result> {
-  fulfilled?: (
-    options: Omit<IRequestCallback<Payload, Result>, "error">,
-  ) => void;
-  rejected?: (
-    options: Omit<IRequestCallback<Payload, Result>, "result">,
-  ) => void;
-  abort?: (
-    options: Omit<IRequestCallback<Payload, Result>, "error" | "result">,
-  ) => void;
-  resolved?: (
-    options: Omit<IRequestCallback<Payload, Result>, "result" | "error">,
-  ) => void;
-  action?: (
-    options: Omit<IRequestCallback<Payload, Result>, "error" | "result">,
-  ) => void;
-  initialStatus?: ILoadingStatus;
-  optimisticUpdate?: (params: Payload) => Result;
-}
+  invalidate: () => void;
+  abort: () => void;
+} & UseRequestType<Payload, Result>;
 
 /**
  * Represents a Leiten Request.
@@ -78,131 +59,38 @@ export const leitenRequest = <
   Result extends DotNestedValue<Store, P> | null | void,
 >(
   store: StoreApi<Store>,
-  path: P extends string
-    ? Result extends void
-      ? P
-      : DotNestedValue<Store, P> extends Result | null
-        ? P
-        : never
-    : never,
+  path: QueryPath<Store, P, Result>,
   payloadCreator: (
     params: Payload,
     extraArgument?: IExtraArgument,
   ) => Promise<Result>,
   options?: ILeitenRequestOptions<Payload, Result>,
 ): ILeitenRequest<Payload, Result> => {
-  const key = nanoid(12);
-  const initialState = initialLeitenLoading<Payload, Result>(
-    options?.initialStatus,
+  const {
+    key,
+    initialState,
+    _setState,
+    execute,
+    _getState,
+    _set,
+    reactions,
+    clear,
+  } = getQueryHelpers(store, path, options);
+
+  const { action: realAction, abort } = createAsyncActions(
+    payloadCreator,
+    reactions,
   );
-  const initialContent = get(store.getState(), path, null) as Result;
 
-  const setState = (state: ILeitenLoading<Payload, Result>) => {
-    useLeitenRequestStore.setState({ [key]: state });
-  };
-  //Mutate the useLeitenRequestStore to add the initial state without notify subscribers
-  useLeitenRequestStore.getState()[key] = initialState;
-
-  const setContent = (content: Result) => {
-    const nextState = produce(store.getState(), (draft) => {
-      set(draft, path, content);
-    });
-    store.setState(nextState);
+  const action = (
+    params: Payload,
+    actionOptions?: { status?: ILoadingStatus; requestId?: string },
+  ) => {
+    execute(realAction, params, actionOptions);
   };
 
-  const getState = (): ILeitenLoading<Payload, Result> => {
-    return useLeitenRequestStore.getState()[key] || initialState;
-  };
-
-  const getContent = (): Result => {
-    const result = get(store.getState(), path, "_empty") as Result | "_empty";
-    if (result !== "_empty") {
-      return result || initialContent;
-    } else {
-      return initialContent;
-    }
-  };
-
-  const _set = (value: Partial<Result> | void, rewrite = false) => {
-    if (typeof value === "object") {
-      const state = getContent();
-      const objectContent = rewrite
-        ? ({ ...value } as Result)
-        : ({ ...state, ...value } as Result);
-      const content = typeof value === "object" ? objectContent : value;
-      setContent(content);
-    } else {
-      value !== undefined && value !== null && setContent(value);
-    }
-  };
-
-  let previousResult: Result = getContent();
-
-  const reactions = {
-    action: (payload: Payload, status?: ILoadingStatus, requestId?: string) => {
-      setState({
-        status: status ?? "loading",
-        payload,
-        error: null,
-        requestId: requestId,
-      });
-      options?.action?.({
-        previousResult,
-        requestId: requestId || "",
-        payload,
-      });
-      previousResult = getContent();
-
-      if (options?.optimisticUpdate) {
-        setContent(options.optimisticUpdate(payload));
-      }
-    },
-    fulfilled: (result: Result, payload: Payload, requestId: string) => {
-      const state = getState();
-      setState({ ...state, status: "loaded" });
-      if (requestId === state.requestId) {
-        if (
-          result !== undefined &&
-          (!options?.optimisticUpdate || !isEqual(previousResult, result))
-        ) {
-          setContent(result);
-        }
-        options?.fulfilled?.({ previousResult, requestId, payload, result });
-      }
-    },
-    rejected: (payload: Payload, error: any, requestId?: string) => {
-      const state = getState();
-      setState({ ...state, status: "error", error });
-      options?.rejected?.({
-        previousResult,
-        requestId: requestId || "",
-        payload,
-        error,
-      });
-      if (options?.optimisticUpdate) {
-        setContent(previousResult);
-      }
-    },
-    abort: (payload: Payload, requestId: string) => {
-      const state = getState();
-      if (state.requestId === requestId) {
-        setState(initialState);
-        options?.abort?.({ previousResult, requestId, payload });
-        if (options?.optimisticUpdate) {
-          setContent(previousResult);
-        }
-      }
-    },
-    resolved: (payload: Payload, requestId: string) => {
-      options?.resolved?.({ previousResult, requestId, payload });
-    },
-  };
-
-  const { action, abort } = createAsyncActions(payloadCreator, reactions);
-
-  const clear = () => {
-    setState(initialState);
-    setContent(initialContent);
+  const invalidate = () => {
+    options?.cache?.name && cacheResolver.invalidate(options.cache.name).then();
   };
 
   const usages: Record<string, boolean> = {};
@@ -222,7 +110,7 @@ export const leitenRequest = <
     );
   };
 
-  resettableStoreSubscription(store, () => setState(initialState));
+  resettableStoreSubscription(store, () => _setState(initialState));
 
   return Object.assign(useRequest, {
     abort,
@@ -230,9 +118,10 @@ export const leitenRequest = <
     clear,
     set: _set,
     key,
-    get: getState,
+    get: _getState,
+    invalidate,
     _usages: usages,
-  });
+  }) as ILeitenRequest<Payload, Result>;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -3,6 +3,7 @@ import { StoreApi, UseBoundStore } from "zustand";
 
 import { IExtraArgument } from "../interfaces/IExtraArgument";
 import { ILeitenEffects } from "../interfaces/ILeitenEffects";
+import { ILeitenRequestOptions } from "../interfaces/ILeitenRequestOptions";
 import {
   DotNestedKeys,
   DotNestedValue,
@@ -10,11 +11,7 @@ import {
 } from "../interfaces/pathTypes";
 import { ILeitenPrimitive, leitenPrimitive } from "./leitenPrimitive";
 import { ILeitenRecord, leitenRecord } from "./leitenRecord";
-import {
-  ILeitenRequestOptions,
-  leitenRequest,
-  resettableStoreSubscription,
-} from "./leitenRequest";
+import { leitenRequest, resettableStoreSubscription } from "./leitenRequest";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 type RecordFilter<T> = {

@@ -15,7 +15,11 @@ type ActionType = "OPEN" | "CLOSE" | "TOGGLE" | "SET_DATA";
 export interface ILeitenModal<Data> {
   open: (data?: Data, replace?: boolean) => void;
   close: () => void;
-  action: (params: { type: ActionType; payload?: Data; replace?: boolean }) => void;
+  action: (params: {
+    type: ActionType;
+    payload?: Data;
+    replace?: boolean;
+  }) => void;
   get: () => [open: boolean, hidden: boolean];
   key: string;
 
@@ -34,11 +38,17 @@ export interface ILeitenModal<Data> {
  *   @property {boolean} [clearOnClose] - Flag indicating whether to clear the content on close.
  * @returns {ILeitenModal<DotNestedValue<Store, P>>} The Leiten modal instance.
  */
-export const leitenModal = <Store extends object, P extends DotNestedKeys<Store>>(
+export const leitenModal = <
+  Store extends object,
+  P extends DotNestedKeys<Store>,
+>(
   store: StoreApi<Store>,
   path: P extends string ? P : never,
   extra?: {
-    reaction?: (params: { type: ActionType; payload?: DotNestedValue<Store, P> }) => void;
+    reaction?: (params: {
+      type: ActionType;
+      payload?: DotNestedValue<Store, P>;
+    }) => void;
     clearOnClose?: boolean;
   },
 ): ILeitenModal<DotNestedValue<Store, P>> => {
@@ -62,7 +72,11 @@ export const leitenModal = <Store extends object, P extends DotNestedKeys<Store>
     leitenModalManagerAction(key, value, replace);
   };
 
-  const action = (params: { type: ActionType; payload?: Data; replace?: boolean }) => {
+  const action = (params: {
+    type: ActionType;
+    payload?: Data;
+    replace?: boolean;
+  }) => {
     if (params.type === "CLOSE") {
       setState(false);
       if (extra?.clearOnClose) {
