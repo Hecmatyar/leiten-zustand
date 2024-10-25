@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { ReactNode, useEffect } from "react";
-import { StoreApi } from "zustand/esm";
+import { StoreApi } from "zustand";
 
 /** @deprecated use leitenFeature instead */
 export const leitenResettable = <Store, _>(

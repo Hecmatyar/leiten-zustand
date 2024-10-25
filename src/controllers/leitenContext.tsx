@@ -1,6 +1,11 @@
 import { createContext, ReactNode, useContext, useState } from "react";
-import { StateCreator, StoreApi, UseBoundStore, useStore } from "zustand";
-import { createStore as create } from "zustand/vanilla";
+import {
+  createStore as create,
+  StateCreator,
+  StoreApi,
+  UseBoundStore,
+  useStore,
+} from "zustand";
 
 /** @deprecated use leitenFeature instead */
 export const leitenContext = <STATE, R>(

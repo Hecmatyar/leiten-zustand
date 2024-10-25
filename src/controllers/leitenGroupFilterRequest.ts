@@ -1,7 +1,6 @@
 import { produce } from "immer";
 import { get, set } from "lodash-es";
-import { StoreApi } from "zustand";
-import { UseBoundStore } from "zustand/esm";
+import { StoreApi, UseBoundStore } from "zustand";
 
 import { IExtraArgument } from "../interfaces/IExtraArgument";
 import { ILeitenEffects } from "../interfaces/ILeitenEffects";

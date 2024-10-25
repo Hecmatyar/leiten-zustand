@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { create } from "zustand/esm";
+import { create } from "zustand";
 
 import { leitenModal } from "../controllers/leitenModal";
 import { leitenRequest } from "../controllers/leitenRequest";

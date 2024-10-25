@@ -1,6 +1,6 @@
 {
   "name": "leiten-zustand",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": false,
   "description": "Zustand state manager controllers",
   "repository": {
@@ -76,14 +76,14 @@
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
     "typescript": "^5.3.3",
-    "zustand": "^4.5.1",
+    "zustand": "^5.0.0",
     "immer": "^10.0.3",
     "lodash-es": "^4.17.21",
     "js-md5": "^0.8.3"
   },
   "peerDependencies": {
     "react": ">=17",
-    "zustand": ">=4",
+    "zustand": ">=5",
     "lodash-es": ">=4",
     "nanoid": ">=4",
     "immer": ">=10"

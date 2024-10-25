@@ -1,6 +1,6 @@
 import { produce } from "immer";
 import { get, set } from "lodash-es";
-import { StoreApi } from "zustand/esm";
+import { StoreApi } from "zustand";
 
 import {
   AcceptableType,

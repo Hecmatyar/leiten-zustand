@@ -1,13 +1,12 @@
 import { produce } from "immer";
 import { mapValues, set } from "lodash-es";
-import { create } from "zustand";
-import { UseBoundStore } from "zustand/react";
 import type {
   Mutate,
   StateCreator,
   StoreApi,
   StoreMutatorIdentifier,
-} from "zustand/vanilla";
+} from "zustand";
+import { create, UseBoundStore } from "zustand";
 
 import {
   DotNestedKeys,
