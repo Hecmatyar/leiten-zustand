@@ -26,7 +26,9 @@ const Keywords = () => {
 
   return (
     <>
-      {keywords?.map((k) => <Keyword item={k} />)}
+      {keywords?.map((k) => (
+        <Keyword item={k} />
+      ))}
       <button onClick={() => listController.add([{ value: "test", bid: 0 }])}>
         add
       </button>

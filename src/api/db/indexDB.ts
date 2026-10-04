@@ -1,4 +1,5 @@
 import {
+  DBSchema,
   IDBPDatabase,
   IndexNames,
   openDB,
@@ -6,7 +7,6 @@ import {
   StoreNames,
   StoreValue,
 } from "idb";
-import { DBSchema } from "idb/build/entry";
 
 /**
  * Class representing an IndexedDb.
@@ -152,11 +152,18 @@ export class IndexedDb<DBTypes extends DBSchema> {
       indexes?: IndexNames<DBTypes, StoreNames<DBTypes>>[];
     }[],
   ) {
+    // IndexedDB is unavailable (e.g. React Native): cache silently disabled
+    if (typeof indexedDB === "undefined") {
+      return;
+    }
+
     try {
       this.db = await openDB(this.database);
       await this.createObjectStore(tables);
     } catch (error) {
-      localStorage.setItem("IndexedDBErrors", String(error));
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem("IndexedDBErrors", String(error));
+      }
       // console.error("Error initializing IndexedDB:", error);
     }
   }

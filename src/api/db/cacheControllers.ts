@@ -1,4 +1,4 @@
-import { DBSchema } from "idb/build/entry";
+import { DBSchema } from "idb";
 
 import { IndexedDb } from "./indexDB";
 

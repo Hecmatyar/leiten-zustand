@@ -62,13 +62,17 @@ export type ILeitenGroupRequest<Payload, Result> = {
 } & UseRequestType<Payload, Result> &
   UseGroupRequestType<Payload, Result>;
 
-export interface ILeitenGroupRequestOption<Payload, Result>
-  extends ILeitenRequestOptions<ILeitenGroupRequestParams<Payload>, Result> {
+export interface ILeitenGroupRequestOption<
+  Payload,
+  Result,
+> extends ILeitenRequestOptions<ILeitenGroupRequestParams<Payload>, Result> {
   initialContent?: Result | ((key: string) => Result);
 }
 
-export interface ILeitenGroupRequestArrayOption<Payload, Result>
-  extends ILeitenGroupRequestOption<Payload, Result> {
+export interface ILeitenGroupRequestArrayOption<
+  Payload,
+  Result,
+> extends ILeitenGroupRequestOption<Payload, Result> {
   getKey: (value: Result) => string;
 }
 
@@ -99,12 +103,12 @@ export const leitenGroupRequest = <
   Store extends object,
   P extends DotNestedKeys<Store>,
   Payload,
-  Result extends DotNestedValue<Store, P> extends Record<
+  Result extends (DotNestedValue<Store, P> extends Record<
     string,
     AcceptableType<Store>
   >
     ? ValueOf<DotNestedValue<Store, P>>
-    : ArrayElementType<DotNestedValue<Store, P>>,
+    : ArrayElementType<DotNestedValue<Store, P>>),
 >(
   store: StoreApi<Store>,
   path: P extends string
@@ -254,11 +258,9 @@ export const leitenGroupRequest = <
   ): U;
   function hook<Payload, Result, U = LeitenState<Payload, Result>>(
     first?:
-      | string
-      | ((state: Record<string, LeitenState<Payload, Result>>) => U),
+      string | ((state: Record<string, LeitenState<Payload, Result>>) => U),
     second?:
-      | ((state: LeitenState<Payload, Result>) => U)
-      | ((a: U, b: U) => boolean),
+      ((state: LeitenState<Payload, Result>) => U) | ((a: U, b: U) => boolean),
   ): U {
     if (first !== undefined && typeof first === "string") {
       return useRequest(first, second as any);
@@ -272,7 +274,6 @@ export const leitenGroupRequest = <
   return Object.assign(hook, { clear, action, requests, call: action });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nonTypedReturn = (value: any) => value;
 const checkInitial = <Result>(
   value: Result | ((key: string) => Result),

@@ -38,12 +38,12 @@ import { resettableStoreSubscription } from "./leitenRequest";
 export const leitenGroupFilterRequest = <
   Store extends object,
   P extends DotNestedKeys<Store>,
-  Result extends DotNestedValue<Store, P> extends Record<
+  Result extends (DotNestedValue<Store, P> extends Record<
     string,
     AcceptableType<Store>
   >
     ? ValueOf<DotNestedValue<Store, P>>
-    : ArrayElementType<DotNestedValue<Store, P>>,
+    : ArrayElementType<DotNestedValue<Store, P>>),
 >(
   store: UseBoundStore<StoreApi<Store>>,
   path: P extends string

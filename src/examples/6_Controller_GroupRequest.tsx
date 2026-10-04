@@ -39,7 +39,9 @@ const GroupRequest = () => {
 
   return (
     <>
-      {cards?.map((id) => <Card id={id} />)}
+      {cards?.map((id) => (
+        <Card id={id} />
+      ))}
       <Statuses />
     </>
   );

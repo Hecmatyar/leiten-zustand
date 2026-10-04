@@ -120,8 +120,7 @@ export function leitenFeature<FEATURE extends object, DEPS, STATIC>(
 
 export function leitenFeature<FEATURE extends object, DEPS, STATIC>(
   staticCreator:
-    | ((deps: IFeatureCreator<DEPS>) => FEATURE)
-    | ((arg: IMount) => STATIC),
+    ((deps: IFeatureCreator<DEPS>) => FEATURE) | ((arg: IMount) => STATIC),
   creator?: (deps: IFeatureCreator<DEPS>, _static: STATIC) => FEATURE,
 ): STATIC extends void
   ? Return<FEATURE, DEPS>

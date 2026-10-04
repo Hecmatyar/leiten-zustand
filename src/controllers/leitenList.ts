@@ -29,8 +29,11 @@ export interface ILeitenListOptions<ITEM, State, SET> {
   patchEffect?: (items: SET) => Partial<State>;
 }
 
-export interface ILeitenNormalizedListOptions<ITEM, State, SET>
-  extends ILeitenListOptions<ITEM, State, SET> {
+export interface ILeitenNormalizedListOptions<
+  ITEM,
+  State,
+  SET,
+> extends ILeitenListOptions<ITEM, State, SET> {
   getKey: (item: ITEM) => string;
 }
 
@@ -50,18 +53,18 @@ export interface ILeitenNormalizedListOptions<ITEM, State, SET>
 export const leitenList = <
   Store extends object,
   P extends DotNestedKeys<Store>,
-  ITEM extends DotNestedValue<Store, P> extends Record<
+  ITEM extends (DotNestedValue<Store, P> extends Record<
     string,
     AcceptableType<Store>
   >
     ? ValueOf<DotNestedValue<Store, P>>
-    : ArrayElementType<DotNestedValue<Store, P>>,
-  SET extends DotNestedValue<Store, P> extends Record<
+    : ArrayElementType<DotNestedValue<Store, P>>),
+  SET extends (DotNestedValue<Store, P> extends Record<
     string,
     AcceptableType<Store>
   >
     ? NormalizedType<ITEM>
-    : ITEM[],
+    : ITEM[]),
 >(
   store: StoreApi<Store>,
   path: P extends string
